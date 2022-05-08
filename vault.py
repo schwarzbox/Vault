@@ -5,19 +5,19 @@
 VAULT
 """
 
-__version__ = 0.3
+__version__ = 0.4
 
 # vault.py
 
 # MIT License
 # Copyright (c) 2022 Alexander Veledzimovich veledz@gmail.com
 
+# shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 
-# v0.4 password message
-# v0.5 reset password with email
-# v0.6 ui auth
-# v0.7 ui load file
+# v0.45 password message and clear vault_data.db
+# v0.5 reset password with email? or with CLI?
 
+# v1.1 ui auth & ui load file
 
 import argparse
 import json
@@ -120,7 +120,7 @@ class Vault:
             return vault.get(self.key)
 
     def dump_data(self, verbose=True):
-        name = f"{str(time.time()).replace('.','')}.json"
+        name = f"{VAULT_DB}-{str(time.time()).replace('.','')}.json"
         with open(name, 'w') as file:
             json.dump(self.decode_vault(), file)
         if verbose:
