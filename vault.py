@@ -5,7 +5,7 @@
 VAULT
 """
 
-__version__ = 0.4
+__version__ = 0.5
 
 # vault.py
 
@@ -14,13 +14,13 @@ __version__ = 0.4
 
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 
-# v0.45 password message and clear vault_data.db
-# v0.5 reset password with email? or with CLI?
-
-# v1.1 ui auth & ui load file
+# v0.6 show --locate in TUI
+# v0.7 reset password with email or with CLI
+# v1.0 TUI authentication & TUI --load
 
 import argparse
 import json
+import os
 import re
 import shelve
 import time
@@ -31,7 +31,7 @@ import crypto
 import errors as err
 import ui
 from settings import (
-    EMAIL_REGEXP, PASSWORD_REGEXP, VAULT_DB, VAULT_TITLE
+    EMAIL_REGEXP, PASSWORD_REGEXP, VAULT_DB, VAULT_DIR, VAULT_TITLE
 )
 
 
@@ -142,6 +142,9 @@ class Vault:
             del vault[self.key]
         print(f'Remove {self.name}: {self.encoder.decode(self.key)}')
 
+    def locate_database(self):
+        print(f'Locate {self.name} database dir: {VAULT_DIR}')
+
 
 def main():
     parser = argparse.ArgumentParser(description='Vault')
@@ -159,7 +162,7 @@ def main():
     )
     group.add_argument(
         '-up', '--sign_up', action='store_true',
-        help='use to sign up'
+        help='use to sign up and create vault'
     )
     group.add_argument(
         '-dp', '--dump', action='store_true',
@@ -173,8 +176,16 @@ def main():
         '-rm', '--remove', action='store_true',
         help='remove vault from DB'
     )
+    # info actions
+    group.add_argument(
+        '--locate', action='store_true',
+        help='get database dir'
+    )
 
     args = parser.parse_args()
+
+    if not os.path.isdir(VAULT_DIR):
+        os.mkdir(VAULT_DIR)
 
     vlt = Vault(VAULT_TITLE)
     if args.sign_up:
@@ -200,6 +211,11 @@ def main():
                     print(e)
             elif args.remove:
                 vlt.remove_data()
+            elif args.locate:
+                vlt.locate_database()
+            else:
+                parser.print_help()
+
         except err.LoginFailed as e:
             print(e)
 

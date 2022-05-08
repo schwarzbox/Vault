@@ -26,8 +26,16 @@ class InvalidJSON(VaultException):
 
 
 class InvalidEmail(VaultException):
-    message = 'Please use valid email'
+    message = 'Use valid email'
 
 
 class InvalidPassword(VaultException):
-    message = 'Please use strong password'
+    help_messages = [
+        '- Minimum 8 characters',
+        '- The alphabets must be between [a-z]',
+        '- At least one alphabet should be of Upper Case [A-Z]',
+        '- At least 1 number or digit between [0-9]',
+        '- At least 1 character from [_-@$!%*#?&]'
+    ]
+    help_message = '\n'.join(help_messages)
+    message = f"Use strong password:\n{help_message}"
