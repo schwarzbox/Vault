@@ -6,7 +6,7 @@ Command line password manager.
 
 ![Screenshot](screenshot/screenshot1.png)
 
-# Installation
+# Installation or [pre-build app](https://github.com/schwarzbox/Vault/releases)
 
 You need python3 to create executable and run vault password manager.
 
@@ -35,7 +35,6 @@ mv vault /usr/local/bin
 
 After moving files you can remove Vault-master and Vault.zip.
 
-
 # First run
 
 ```bash
@@ -50,8 +49,34 @@ vault -h
 vault av@gmail.com Vault-96 -up
 # sign-in and check that vault is empty
 vault av@gmail.com Vault-96 -in
-# load data to vault and auto sign-in
+# load data from json to vault and auto sign-in
 vault av@gmail.com Vault-96 -ld <your.json>
+```
+
+# Prepare JSON with your sensetive data
+```JSON
+{
+    "gmail": {
+        "login": "av@gmail.com",
+        "password": "1234"
+    },
+    "database": {
+        "django-local": "DATABASE_NAME=DB\nDATABASE_USER=postgres\nDATABASE_PASSWORD=''\nDATABASE_HOST=127.0.0.1\nDATABASE_PORT=5432\nDATABASE_CONN_MAX_AGE=600",
+        "django-testing": "DATABASE_NAME=DB\nDATABASE_USER=postgres\nDATABASE_PASSWORD=''\nDATABASE_HOST=127.0.0.1\nDATABASE_PORT=5432\nDATABASE_CONN_MAX_AGE=600"
+    },
+    "aws": {
+        "login": "av@gmail.com",
+        "password": "1234567"
+    },
+    "jenkins": {
+        "login": "av",
+        "password": "12345"
+    },
+    "personal": {
+        "Pro Bank Account": "12345678901234567",
+        "WIFI-HOME": "1234"
+    }
+}
 ```
 
 # Database location
