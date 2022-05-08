@@ -14,6 +14,7 @@ __version__ = 0.5
 
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 
+# add information about encode algorithms in README.md
 # v0.6 show --locate in TUI
 # v0.7 reset password with email or with CLI
 # v1.0 TUI authentication & TUI --load
@@ -199,9 +200,7 @@ def main():
         try:
             vlt.get_user(args.login, args.password)
 
-            if args.sign_in:
-                ui.ViewApp.run(title=vlt.name, vlt=vlt)
-            elif args.dump:
+            if args.dump:
                 vlt.dump_data()
             elif args.path:
                 try:
@@ -214,7 +213,7 @@ def main():
             elif args.locate:
                 vlt.locate_database()
             else:
-                parser.print_help()
+                ui.ViewApp.run(title=vlt.name, vlt=vlt)
 
         except err.LoginFailed as e:
             print(e)

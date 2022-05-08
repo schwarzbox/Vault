@@ -6,9 +6,9 @@ Command line password manager.
 
 ![Screenshot](screenshot/screenshot1.png)
 
-# Installation or [pre-build app](https://github.com/schwarzbox/Vault/releases)
+# Install
 
-You need python3 to create executable and run vault password manager.
+You need python 3.9 to create executable and run <strong>vault</strong> password manager.
 
 ```bash
 curl -L https://github.com/schwarzbox/Vault/archive/master.zip --output Vault.zip
@@ -33,7 +33,7 @@ You can move <strong>vault</strong> to /usr/local/bin for Mac and Linux OS.
 mv vault /usr/local/bin
 ```
 
-After moving files you can remove Vault-master and Vault.zip.
+After moving <strong>vault</strong> you can remove Vault-master and Vault.zip.
 
 # First run
 
@@ -46,37 +46,37 @@ vault -h
 
 ```bash
 # sign-up and create empty vault
-vault av@gmail.com Vault-96 -up
+vault av@myemail.com Vault-96 -up
 # sign-in and check that vault is empty
-vault av@gmail.com Vault-96 -in
-# load data from json to vault and auto sign-in
-vault av@gmail.com Vault-96 -ld <your.json>
+vault av@myemail.com Vault-96 -in
+# you can omit flag -in
+vault av@myemail.com Vault-96
 ```
 
-# Prepare JSON with your sensetive data
+# Prepare JSON with your sensetive data based on example below or use the sample.json for testing password manager.
+
 ```JSON
 {
-    "gmail": {
-        "login": "av@gmail.com",
+    "email": {
+        "login": "av@myemail.com",
         "password": "1234"
     },
-    "database": {
-        "django-local": "DATABASE_NAME=DB\nDATABASE_USER=postgres\nDATABASE_PASSWORD=''\nDATABASE_HOST=127.0.0.1\nDATABASE_PORT=5432\nDATABASE_CONN_MAX_AGE=600",
-        "django-testing": "DATABASE_NAME=DB\nDATABASE_USER=postgres\nDATABASE_PASSWORD=''\nDATABASE_HOST=127.0.0.1\nDATABASE_PORT=5432\nDATABASE_CONN_MAX_AGE=600"
-    },
     "aws": {
-        "login": "av@gmail.com",
-        "password": "1234567"
+        "login": "av@myemail.com",
+        "password": "5678"
     },
-    "jenkins": {
-        "login": "av",
-        "password": "12345"
+    "database": {
+        "django-local": "DATABASE_NAME=MYDB\nDATABASE_USER=postgres\nDATABASE_PASSWORD=''\nDATABASE_HOST=127.0.0.1\nDATABASE_PORT=5432\nDATABASE_CONN_MAX_AGE=600"
     },
     "personal": {
-        "Pro Bank Account": "12345678901234567",
-        "WIFI-HOME": "1234"
+        "WIFI-HOME": "wifi-av"
     }
 }
+```
+
+```bash
+# load data from json to your vault and auto sign-in
+vault av@myemail.com Vault-96 --load sample.json
 ```
 
 # Database location
@@ -85,10 +85,16 @@ Iternally <strong>vault</strong> use python package <strong>appdirs</strong> to 
 
 ```bash
 # get VaultDB location
-vault av@gmail.com Vault-96 --locate
+vault av@myemail.com Vault-96 --locate
 ```
 
-# Next releases
+# Remove sample data
+
+```bash
+vault av@myemail.com Vault-96 -rm
+```
+
+# Road map
 
 v0.6 show --locate in TUI
 
