@@ -14,7 +14,7 @@ setup(
     author_email='veledz@gmail.com',
     license='MIT',
     py_modules=[
-        'vault', 'crypto', 'errors', 'ui', 'settings'
+        'vault', 'crypto', 'errors', 'ui', 'mixins', 'settings'
     ],
     packages=find_packages(),
     include_package_data=True,
