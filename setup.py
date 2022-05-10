@@ -5,7 +5,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='Vault',
-    version='0.5',
+    version='0.6',
     description='Password manager',
     long_description=long_description,
     long_description_content_type='text/markdown',

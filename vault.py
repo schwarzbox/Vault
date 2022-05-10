@@ -5,7 +5,7 @@
 VAULT
 """
 
-__version__ = 0.5
+__version__ = 0.6
 
 # vault.py
 
@@ -13,11 +13,6 @@ __version__ = 0.5
 # Copyright (c) 2022 Alexander Veledzimovich veledz@gmail.com
 
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
-
-# add information about encode algorithms in README.md
-# v0.6 show --locate in TUI
-# v0.7 reset password with email or with CLI
-# v1.0 TUI authentication & TUI --load
 
 import argparse
 import json
@@ -29,11 +24,14 @@ import time
 from cryptography.fernet import InvalidToken
 
 import crypto
+
 import errors as err
-import ui
+
 from settings import (
     EMAIL_REGEXP, PASSWORD_REGEXP, VAULT_DB, VAULT_DIR, VAULT_TITLE
 )
+
+import ui
 
 
 class Vault:
@@ -68,12 +66,6 @@ class Vault:
             self.vault = self.load_vault()
         else:
             raise err.LoginFailed()
-
-    def set_folder(self, key, value: dict):
-        self.vault[key] = value
-
-    def get_folder(self, key):
-        return self.vault.get(key) or {}
 
     def set_vault_key(self, login, password):
         log_str = f'{login}-{password}'
@@ -120,14 +112,18 @@ class Vault:
         with shelve.open(VAULT_DB) as vault:
             return vault.get(self.key)
 
-    def dump_data(self, verbose=True):
-        name = f"{VAULT_DB}-{str(time.time()).replace('.','')}.json"
+    def get_json_path(self):
+        return f"{VAULT_DB}-{str(time.time()).replace('.','')}.json"
+
+    def dump_data(self, name, verbose=True):
         with open(name, 'w') as file:
             json.dump(self.decode_vault(), file)
         if verbose:
             print(f'Dump {self.name}: {name}')
+        else:
+            return name
 
-    def load_data(self, path):
+    def load_data(self, path, verbose=True):
         try:
             with open(path, 'r') as file:
                 self.vault = json.load(file)
@@ -136,15 +132,23 @@ class Vault:
             raise err.FileNotFound(path)
         except (json.decoder.JSONDecodeError, UnicodeDecodeError):
             raise err.InvalidJSON(path)
-        print(f'Load {self.name}: {path}')
+
+        if verbose:
+            print(f'Load {self.name}: {path}')
+        else:
+            return path
 
     def remove_data(self):
         with shelve.open(VAULT_DB) as vault:
             del vault[self.key]
+
         print(f'Remove {self.name}: {self.encoder.decode(self.key)}')
 
-    def locate_database(self):
-        print(f'Locate {self.name} database dir: {VAULT_DIR}')
+    def find_database(self, verbose=True):
+        if verbose:
+            print(f'Find {self.name} DB: {VAULT_DIR}')
+        else:
+            return VAULT_DIR
 
 
 def main():
@@ -179,8 +183,8 @@ def main():
     )
     # info actions
     group.add_argument(
-        '--locate', action='store_true',
-        help='get database dir'
+        '--find', action='store_true',
+        help='find database directory'
     )
 
     args = parser.parse_args()
@@ -201,7 +205,7 @@ def main():
             vlt.get_user(args.login, args.password)
 
             if args.dump:
-                vlt.dump_data()
+                vlt.dump_data(vlt.get_json_path())
             elif args.path:
                 try:
                     vlt.load_data(args.path)
@@ -210,8 +214,8 @@ def main():
                     print(e)
             elif args.remove:
                 vlt.remove_data()
-            elif args.locate:
-                vlt.locate_database()
+            elif args.find:
+                vlt.find_database()
             else:
                 ui.ViewApp.run(title=vlt.name, vlt=vlt)
 

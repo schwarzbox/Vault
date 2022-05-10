@@ -1,6 +1,6 @@
 # vault
 
-v0.5
+v0.6
 
 Command line password manager.
 
@@ -18,7 +18,7 @@ cd Vault-master
 python3 -m venv venv-shiv
 . venv-shiv/bin/activate
 pip3 install shiv
-# create executable in the current dir
+# create vault executable in the current dir
 shiv -c vault -o vault --preamble preamble.py .
 deactivate
 # remove venv-shiv
@@ -38,7 +38,6 @@ After moving <strong>vault</strong> you can remove Vault-master and Vault.zip.
 # First run
 
 ```bash
-# run vault help
 vault -h
 ```
 
@@ -53,7 +52,9 @@ vault av@myemail.com Vault-96 -in
 vault av@myemail.com Vault-96
 ```
 
-# Prepare JSON with your sensetive data based on example below or use the sample.json for testing password manager.
+# Prepare JSON with your sensetive data
+
+See example below or use sample.json for testing password manager.
 
 ```JSON
 {
@@ -84,11 +85,11 @@ vault av@myemail.com Vault-96 --load sample.json
 Iternally <strong>vault</strong> use python package <strong>appdirs</strong> to determine where to save encrypted database. For MacOS it is "/Users/whoami/Library/Application Support/VaultDB" dir.
 
 ```bash
-# get VaultDB location
-vault av@myemail.com Vault-96 --locate
+# find VaultDB location
+vault av@myemail.com Vault-96 --find
 ```
 
-# Remove sample data
+# Remove data
 
 ```bash
 vault av@myemail.com Vault-96 -rm
@@ -96,8 +97,12 @@ vault av@myemail.com Vault-96 -rm
 
 # Road map
 
-v0.6 show --locate in TUI
+v0.65 spinner for load JSON pop-up, change icons, add info about encryption in README.md
 
-v0.7 reset password with email or with CLI
+v0.7 reset password with email, add about page
 
-v1.0 TUI authentication & TUI --load
+v0.8 change scroll color, move login validator to separate class
+
+v1.0 TUI authentication
+
+v1.1 setup cloud access to vault_data.db
