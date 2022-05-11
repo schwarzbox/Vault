@@ -1,28 +1,34 @@
 # vault.py
 import os
+from typing import TypeVar
 
 import pyperclip as pc
 
 from rich.align import Align
 from rich.box import HEAVY
-from rich.console import RenderableType
+from rich.color import Color
+from rich.console import Console, RenderableType
 from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
 
+
 from textual.app import App
-from textual.reactive import Reactive
+from textual.scrollbar import ScrollBar, ScrollBarRender
 from textual.views import GridView
 from textual.widget import Widget
 from textual.widgets import (
-    Button, Footer, ScrollView, TreeClick, TreeControl
+    Button, Footer, ScrollView, TreeClick, TreeControl, TreeNode
 )
 
 import errors as err
 
 from mixins import ButtonMixin
 
-from settings import VAULT_DIR
+from settings import BRIGHT_GREEN, GRAY, GREEN, VAULT_DIR, YELLOW
+
+console = Console()
+NodeDataType = TypeVar('NodeDataType')
 
 
 class CellGrid(GridView):
@@ -87,13 +93,11 @@ class Notification(Widget):
             Align.center(
                 Text(self.label),
                 vertical='middle',
-                style='green'
+                style=BRIGHT_GREEN
             ),
             title=self.title,
             title_align='left',
-            border_style=Style(
-                color='green'
-            ),
+            border_style=Style(color=GREEN),
             box=HEAVY
         )
 
@@ -107,45 +111,81 @@ class Notification(Widget):
         self.set_timer(2, lambda: self.hide())
 
 
+class LoadScroll(ScrollBar):
+    def render(self) -> RenderableType:
+        style = Style(
+            bgcolor=Color.parse(GRAY),
+            color=Color.parse(YELLOW if self.grabbed else GREEN),
+        )
+        return ScrollBarRender(
+            virtual_size=self.virtual_size,
+            window_size=self.window_size,
+            position=self.position,
+            vertical=self.vertical,
+            style=style,
+        )
+
+
 class LoadTree(TreeControl):
     async def update_dirs(self, cwd='.'):
         for folder in os.listdir(cwd):
-            if '.json' in folder:
-                await self.add(
-                    self.root.id,
-                    folder,
-                    {'path': folder}
-                )
-            elif os.path.isdir(folder):
+            if folder.startswith('.'):
+                continue
+            if os.path.isdir(folder):
                 await self.add(
                     self.root.id,
                     folder,
                     {'dir': folder}
                 )
+            else:
+                await self.add(
+                    self.root.id,
+                    folder,
+                    {'path': folder}
+                )
+
         self.refresh(layout=True)
+
+    def render_node(
+        self, node: TreeNode[NodeDataType]
+    ) -> RenderableType:
+
+        color = GRAY
+        is_clickable = False
+        if os.path.isdir(node.label):
+            color = BRIGHT_GREEN
+            is_clickable = True
+        elif os.path.splitext(node.label)[1] == '.json':
+            color = YELLOW
+            is_clickable = True
+
+        label = (
+            Text(
+                node.label,
+                no_wrap=True,
+                style=color,
+                overflow='ellipsis'
+            )
+            if isinstance(node.label, str)
+            else node.label
+        )
+        if is_clickable:
+            if node.id == self.hover_node:
+                label.stylize('underline')
+
+            label.apply_meta(
+                {
+                    '@click': f'click_label({node.id})',
+                    'tree_node': node.id
+                }
+            )
+        return label
 
 
 class ViewApp(App):
-    show_cell: Reactive[RenderableType] = Reactive(True)
-    show_dump: Reactive[RenderableType] = Reactive(False)
-    show_load: Reactive[RenderableType] = Reactive(False)
-    show_find: Reactive[RenderableType] = Reactive(False)
-
     def __init__(self, *args, vlt, **kwargs):
         super().__init__(*args, **kwargs)
         self.vlt = vlt
-
-    def watch_show_cell(self, show_edit: bool) -> None:
-        self.cells.visible = self.show_cell
-
-    def watch_show_dump(self, show_edit: bool) -> None:
-        self.dump_json.visible = self.show_dump
-
-    def watch_show_load(self, show_edit: bool) -> None:
-        self.load_json.visible = self.show_load
-
-    def watch_show_find(self, show_edit: bool) -> None:
-        self.find_db.visible = self.show_find
 
     def action_dump_data(self):
         loc = self.vlt.get_json_path()
@@ -155,17 +195,17 @@ class ViewApp(App):
         )
 
         self.dump_json.visible = not self.dump_json.visible
-        self.show_load = False
-        self.show_find = False
-        self.show_cell = True
+        self.load_json.visible = False
+        self.find_db.visible = False
+        self.cells.visible = True
 
         self.notification.visible = False
 
     def action_load_data(self):
-        self.show_load = not self.show_load
-        self.show_dump = False
-        self.show_find = False
-        self.show_cell = not self.show_load
+        self.load_json.visible = not self.load_json.visible
+        self.dump_json.visible = False
+        self.find_db.visible = False
+        self.cells.visible = not self.load_json.visible
 
         self.notification.visible = False
 
@@ -176,9 +216,9 @@ class ViewApp(App):
         )
 
         self.find_db.visible = not self.find_db.visible
-        self.show_dump = False
-        self.show_load = False
-        self.show_cell = True
+        self.dump_json.visible = False
+        self.load_json.visible = False
+        self.cells.visible = True
 
         self.notification.visible = False
 
@@ -247,7 +287,7 @@ class ViewApp(App):
         await self.view.dock(Footer(), edge='bottom', z=2)
 
         self.cells = CellGrid(cells=self._create_cells())
-        self.cells.visible = self.show_cell
+        self.cells.visible = True
 
         self.notification = Notification(
             title='', label='',
@@ -256,15 +296,17 @@ class ViewApp(App):
         self.dump_json = CopyButton(
             title=f'Dump {self.vlt.name}', label=''
         )
-        self.dump_json.visible = self.show_dump
+        self.dump_json.visible = False
 
         self.load_json = ScrollView()
-        self.load_json.visible = self.show_load
+        self.load_json.vscroll = LoadScroll(vertical=True)
+        self.load_json.hscroll = LoadScroll(vertical=False)
+        self.load_json.visible = False
 
         self.find_db = CopyButton(
             title=f'Find {self.vlt.name} DB', label=''
         )
-        self.find_db.visible = self.show_find
+        self.find_db.visible = False
 
         await self._create_tree(os.getcwd())
 

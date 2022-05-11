@@ -18,7 +18,9 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
-    install_requires=['cryptography', 'pyperclip', 'textual', 'appdirs'],
+    install_requires=[
+        'cryptography', 'pyperclip', 'textual', 'appdirs'
+    ],
     python_requires='>=3.9',
     entry_points={
         'console_scripts': ['vault=vault:main'],

@@ -82,7 +82,7 @@ vault av@myemail.com Vault-96 --load sample.json
 
 # Database location
 
-Iternally <strong>vault</strong> use python package <strong>appdirs</strong> to determine where to save encrypted database. For MacOS it is "/Users/whoami/Library/Application Support/VaultDB" dir.
+Iternally <strong>vault</strong> use python package <strong>appdirs</strong> to determine where to save encrypted database. For MacOS it is "~/Library/Application Support/VaultDB" dir.
 
 ```bash
 # find VaultDB location

@@ -9,6 +9,8 @@ from rich.text import Text
 
 from textual.reactive import Reactive
 
+from settings import BRIGHT_GREEN, GREEN, YELLOW
+
 
 class ButtonMixin:
     clicked: Reactive[RenderableType] = Reactive(False)
@@ -21,7 +23,7 @@ class ButtonMixin:
                 self.on_click_label if self.clicked else self.label,
             ),
             vertical='middle',
-            style='yellow' if self.clicked else 'green'
+            style=YELLOW if self.clicked else BRIGHT_GREEN
         )
         return Panel(
             renderable,
@@ -29,7 +31,7 @@ class ButtonMixin:
             title_align='left',
             height=self.height,
             border_style=Style(
-                color='yellow' if self.mouse_over else 'green'
+                color=YELLOW if self.mouse_over else GREEN
             ),
             box=HEAVY
         )
