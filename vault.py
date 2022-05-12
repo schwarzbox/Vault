@@ -5,7 +5,7 @@
 VAULT
 """
 
-__version__ = 0.6
+__version__ = 0.65
 
 # vault.py
 
@@ -14,13 +14,16 @@ __version__ = 0.6
 
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 
+
 import argparse
+import getpass
 import json
 import os
 import re
 import shelve
 import time
 
+from art import tprint
 from cryptography.fernet import InvalidToken
 
 import crypto
@@ -34,20 +37,27 @@ from settings import (
 import ui
 
 
+class LoginPasswordValidator:
+    def __init__(self):
+        self.login = input('Login? ')
+        self.password = getpass.getpass('Password? ')
+
+    def is_valid(self, email, password):
+        if not re.fullmatch(EMAIL_REGEXP, self.login):
+            raise err.InvalidEmail()
+        if not re.fullmatch(PASSWORD_REGEXP, self.password):
+            raise err.InvalidPassword()
+
+
 class Vault:
     def __init__(self, name):
+        if not os.path.isdir(VAULT_DIR):
+            os.mkdir(VAULT_DIR)
+
         self.name = name
         self.vault = {}
 
-    def _is_valid_credentials(self, email, password):
-        if not re.fullmatch(EMAIL_REGEXP, email):
-            raise err.InvalidEmail()
-        if not re.fullmatch(PASSWORD_REGEXP, password):
-            raise err.InvalidPassword()
-
     def set_user(self, login, password):
-        self._is_valid_credentials(login, password)
-
         self.encoder = crypto.Encoder(login, password)
         self.key = self.get_vault_key(login, password)
         if not self.key:
@@ -55,7 +65,7 @@ class Vault:
             self.save_vault()
 
             print(f'Empty {self.name}:', self.vault)
-            print(f'Please upload data to the {self.name}')
+            print(f'Upload data to the {self.name}')
         else:
             raise err.UserExists()
 
@@ -152,13 +162,10 @@ class Vault:
 
 
 def main():
+    tprint('\nVAUL-T', font='lockergnome')
+
     parser = argparse.ArgumentParser(description='Vault')
-    parser.add_argument(
-        'login', metavar='login', type=str, help='user login'
-    )
-    parser.add_argument(
-        'password', metavar='password', type=str, help='user password'
-    )
+
     # actions
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
@@ -189,20 +196,19 @@ def main():
 
     args = parser.parse_args()
 
-    if not os.path.isdir(VAULT_DIR):
-        os.mkdir(VAULT_DIR)
-
+    lpv = LoginPasswordValidator()
     vlt = Vault(VAULT_TITLE)
     if args.sign_up:
         try:
-            vlt.set_user(args.login, args.password)
+            lpv.is_valid()
+            vlt.set_user(lpv.login, lpv.password)
         except (err.InvalidEmail, err.InvalidPassword) as e:
             print(e)
         except err.UserExists as e:
             print(e)
     else:
         try:
-            vlt.get_user(args.login, args.password)
+            vlt.get_user(lpv.login, lpv.password)
 
             if args.dump:
                 vlt.dump_data(vlt.get_json_path())

@@ -1,6 +1,6 @@
 # vault
 
-v0.6
+v0.65
 
 Command line password manager.
 
@@ -44,12 +44,12 @@ vault -h
 ![Screenshot](screenshot/screenshot2.png)
 
 ```bash
-# sign-up and create empty vault
-vault av@myemail.com Vault-96 -up
-# sign-in and check that vault is empty
-vault av@myemail.com Vault-96 -in
-# you can omit flag -in
-vault av@myemail.com Vault-96
+# run sign-up process and enter login and password
+vault -up
+# sign-in with login and password and check your empty vault
+vault -in
+# you can omit flag -in but each action require login and password
+vault
 ```
 
 # Prepare JSON with your sensetive data
@@ -75,33 +75,31 @@ See example below or use sample.json for testing password manager.
 }
 ```
 
+Load sample.json using command line or use TUI after sign-in.
+
 ```bash
-# load data from json to your vault and auto sign-in
-vault av@myemail.com Vault-96 --load sample.json
+vault --load sample.json
 ```
 
 # Database location
 
-Iternally <strong>vault</strong> use python package <strong>appdirs</strong> to determine where to save encrypted database. For MacOS it is "~/Library/Application Support/VaultDB" dir.
+Iternally <strong>vault</strong> use python package <strong>appdirs</strong> to determine where to save encrypted database. For MacOS it is "~/Library/Application Support/VaultDB".
 
 ```bash
-# find VaultDB location
-vault av@myemail.com Vault-96 --find
+vault --find
 ```
 
 # Remove data
 
 ```bash
-vault av@myemail.com Vault-96 -rm
+vault -rm
 ```
 
 # Road map
 
-v0.65 spinner for load JSON pop-up, change icons, add info about encryption in README.md
+v0.7 change emoji icons, add info about encryption in README.md
 
-v0.7 reset password with email, add about page
-
-v0.8 change scroll color, move login validator to separate class
+v0.8 reset password with email, add ABOUT page
 
 v1.0 TUI authentication
 

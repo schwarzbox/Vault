@@ -5,7 +5,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='Vault',
-    version='0.6',
+    version='0.65',
     description='Password manager',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -19,9 +19,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        'cryptography', 'pyperclip', 'textual', 'appdirs'
+        'art', 'cryptography', 'pyperclip', 'textual', 'appdirs'
     ],
-    python_requires='>=3.9',
+    python_requires='>=3.8',
     entry_points={
         'console_scripts': ['vault=vault:main'],
     },
