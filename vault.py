@@ -162,7 +162,7 @@ class Vault:
 
 
 def main():
-    tprint('\nVAUL-T', font='lockergnome')
+    tprint('\nVAULT', font='lockergnome')
 
     parser = argparse.ArgumentParser(description='Vault')
 
