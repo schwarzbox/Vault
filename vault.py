@@ -42,7 +42,7 @@ class LoginPasswordValidator:
         self.login = input('Login? ')
         self.password = getpass.getpass('Password? ')
 
-    def is_valid(self, email, password):
+    def is_valid(self):
         if not re.fullmatch(EMAIL_REGEXP, self.login):
             raise err.InvalidEmail()
         if not re.fullmatch(PASSWORD_REGEXP, self.password):
