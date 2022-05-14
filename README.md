@@ -111,13 +111,13 @@ vault av@myemail.com -rm
 Iternally <strong>Vault</strong> use python package <strong>appdirs</strong> to determine where to save encrypted database. For MacOS it is "~/Library/Application Support/VaultDB".
 
 ```bash
-vault av@myemail.com --find
+vault --find
 ```
 
 # Version
 
 ```bash
-vault av@myemail.com --version
+vault --version
 ```
 
 # Road map

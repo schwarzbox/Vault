@@ -39,7 +39,6 @@ from settings import (
     PASSWORD_REGEXP,
     TITLE_FONT,
     VAULT_DB,
-    VAULT_DB_UI,
     VAULT_DIR,
     VAULT_TITLE,
     VERSION
@@ -68,7 +67,10 @@ class Vault:
             os.mkdir(VAULT_DIR)
 
         self.name = name
+
         self.vault = {}
+        self.vault_db = VAULT_DB
+        self.vault_db_ui = f'{self.vault_db}.db'
 
     def is_empty(self):
         return not bool(self.vault)
@@ -96,7 +98,7 @@ class Vault:
 
     def get_vault_key(self, login, password):
         log_str = f'{login}-{password}'
-        with shelve.open(VAULT_DB) as vault:
+        with shelve.open(self.vault_db) as vault:
             for key in vault.keys():
                 try:
                     if self.encoder.decode(key) == log_str:
@@ -128,15 +130,12 @@ class Vault:
 
     def save_vault(self):
         self.vault = self.encode_vault()
-        with shelve.open(VAULT_DB) as vault:
-            vault[self.key] = {
-                'DB': VAULT_DIR,
-                VAULT_TITLE: self.vault
-            }
+        with shelve.open(self.vault_db) as vault:
+            vault[self.key] = self.vault
 
     def load_vault(self):
-        with shelve.open(VAULT_DB) as vault:
-            return vault.get(self.key).get(VAULT_TITLE)
+        with shelve.open(self.vault_db) as vault:
+            return vault.get(self.key)
 
     def get_json_path(self):
         return f"{VAULT_DB}-{str(time.time()).replace('.','')}.json"
@@ -162,7 +161,7 @@ class Vault:
         return path
 
     def remove_data(self):
-        with shelve.open(VAULT_DB) as vault:
+        with shelve.open(self.vault_db) as vault:
             del vault[self.key]
 
         show_warning(
@@ -171,9 +170,9 @@ class Vault:
 
     def find_database(self, verbose=True):
         if verbose:
-            show_warning(f'Find {self.name} DB: {VAULT_DB_UI}')
+            show_warning(f'Find {self.name} DB: {self.vault_db_ui}')
         else:
-            return VAULT_DB_UI
+            return self.vault_db_ui
 
     def version(self):
         show_warning(f'Version: {VERSION}')
@@ -186,7 +185,8 @@ def main():
 
     # required
     parser.add_argument(
-        'login', metavar='login', type=str, help='user login'
+        'login', nargs='?', metavar='login', type=str,
+        help='user login'
     )
 
     # actions
@@ -222,6 +222,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if not args.login and not (args.find or args.version):
+        parser.error('the following arguments are required: login')
 
     vlt = Vault(VAULT_TITLE)
 

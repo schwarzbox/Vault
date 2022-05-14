@@ -25,7 +25,6 @@ from settings import (
     GREEN,
     LICENSE,
     RED,
-    VAULT_DB_UI,
     VAULT_TITLE,
     VERSION,
     URL,
@@ -65,7 +64,7 @@ class ViewApp(App):
         self.notification.visible = False
 
     def action_find_database(self):
-        self.find_db.label = VAULT_DB_UI
+        self.find_db.label = self.vlt.vault_db_ui
         self.find_db.action = lambda: self.vlt.find_database(
             verbose=False
         )
