@@ -17,7 +17,7 @@ cd Vault-master
 # create virtual environment to install shiv
 python3 -m venv venv-shiv
 . venv-shiv/bin/activate
-pip3 install shiv
+pip3 install shiv appdirs
 # create vault executable in the current dir
 shiv -c vault -o vault --preamble preamble.py .
 deactivate
@@ -111,16 +111,17 @@ vault av@myemail.com -rm
 Iternally <strong>Vault</strong> use python package <strong>appdirs</strong> to determine where to save encrypted database. For MacOS it is "~/Library/Application Support/VaultDB".
 
 ```bash
-vault --find
+vault av@myemail.com --find
 ```
 
 # Version
 
 ```bash
-vault --version
+vault av@myemail.com --version
 ```
 
 # Road map
 
 v0.9 TUI authentication if needed
+
 v1.0 change vaultDB path & provide access to vault_data.db by http

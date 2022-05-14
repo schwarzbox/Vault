@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 from settings import (
-    AUTHOR, DESCRIPTION, EMAIL, LICENSE, VAULT_TITLE, VERSION, URL
+    AUTHOR, DESCRIPTION, EMAIL, LICENSE, URL, VAULT_TITLE, VERSION
 )
 
 
@@ -26,7 +26,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        'art', 'cryptography', 'pyperclip', 'textual', 'appdirs'
+        'art', 'appdirs', 'cryptography', 'pyperclip', 'textual'
     ],
     python_requires='>=3.9',
     entry_points={

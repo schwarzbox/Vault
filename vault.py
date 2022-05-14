@@ -184,7 +184,7 @@ def main():
 
     parser = argparse.ArgumentParser(description=VAULT_TITLE)
 
-    # requi{RED}
+    # required
     parser.add_argument(
         'login', metavar='login', type=str, help='user login'
     )
