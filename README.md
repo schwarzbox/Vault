@@ -1,6 +1,6 @@
 # vault
 
-v0.65
+v0.8
 
 Command line password manager.
 
@@ -44,12 +44,12 @@ vault -h
 ![Screenshot](screenshot/screenshot2.png)
 
 ```bash
-# run sign-up process and enter login and password
-vault -up
+# run sign-up process and enter password
+vault av@myemail.com -up
 # sign-in with login and password and check your empty vault
-vault -in
+vault av@myemail.com -in
 # you can omit flag -in but each action require login and password
-vault
+vault av@myemail.com
 ```
 
 # Prepare JSON with your sensetive data
@@ -78,29 +78,49 @@ See example below or use sample.json for testing password manager.
 Load sample.json using command line or use TUI after sign-in.
 
 ```bash
-vault --load sample.json
+vault av@myemail.com --load sample.json
+```
+
+# Encryption
+
+Vault use SHA256 algorithm.
+
+1. When user sign-up app creates <strong>safe key</strong> using login and password.
+2. App combine login and password in one <strong>credential string</strong>.
+3. App uses <strong>safe key</strong> to encode <strong>credential string</strong> and get <strong>user token</strong>.
+4. <strong>User token</strong> uses as unique key for the user vault.
+5. All data in the user vault encrypted using <strong>safe key</strong>.
+6. When user sign-in app creates new safe key from provided login and password.
+7. App tries to decode each <strong>user token</strong> in database and compare with provided login and password.
+8. User successfully sign-in when provided login and password mathes with decoded data from <strong>user token</strong>.
+
+Note: User can use same login with different passwords.
+
+# Restore password and decode data
+
+Vault never save your decrypted password. Still no way to restore it and decode ecrypted data without password.
+
+# Remove vault
+
+```bash
+vault av@myemail.com -rm
 ```
 
 # Database location
 
-Iternally <strong>vault</strong> use python package <strong>appdirs</strong> to determine where to save encrypted database. For MacOS it is "~/Library/Application Support/VaultDB".
+Iternally <strong>Vault</strong> use python package <strong>appdirs</strong> to determine where to save encrypted database. For MacOS it is "~/Library/Application Support/VaultDB".
 
 ```bash
 vault --find
 ```
 
-# Remove data
+# Version
 
 ```bash
-vault -rm
+vault --version
 ```
 
 # Road map
 
-v0.7 change emoji icons, add info about encryption in README.md
-
-v0.8 reset password with email, add ABOUT page
-
-v1.0 TUI authentication
-
-v1.1 setup cloud access to vault_data.db
+v0.9 TUI authentication if needed
+v1.0 change vaultDB path & provide access to vault_data.db by http

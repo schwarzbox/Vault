@@ -5,8 +5,6 @@
 VAULT
 """
 
-__version__ = 0.65
-
 # vault.py
 
 # MIT License
@@ -14,6 +12,8 @@ __version__ = 0.65
 
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 
+# v0.9 TUI authentication
+# v1.0 change vaultDB path & provide access to vault_data.db by http
 
 import argparse
 import getpass
@@ -24,22 +24,35 @@ import shelve
 import time
 
 from art import tprint
+
 from cryptography.fernet import InvalidToken
+
+from rich import print
 
 import crypto
 
 import errors as err
+from errors import show_error, show_warning
 
 from settings import (
-    EMAIL_REGEXP, PASSWORD_REGEXP, VAULT_DB, VAULT_DIR, VAULT_TITLE
+    EMAIL_REGEXP,
+    PASSWORD_REGEXP,
+    TITLE_FONT,
+    VAULT_DB,
+    VAULT_DB_UI,
+    VAULT_DIR,
+    VAULT_TITLE,
+    VERSION
 )
 
-import ui
+import tui
+
+__version__ = VERSION
 
 
 class LoginPasswordValidator:
-    def __init__(self):
-        self.login = input('Login? ')
+    def __init__(self, login):
+        self.login = login
         self.password = getpass.getpass('Password? ')
 
     def is_valid(self):
@@ -57,15 +70,15 @@ class Vault:
         self.name = name
         self.vault = {}
 
+    def is_empty(self):
+        return not bool(self.vault)
+
     def set_user(self, login, password):
         self.encoder = crypto.Encoder(login, password)
         self.key = self.get_vault_key(login, password)
         if not self.key:
-            self.key = self.set_vault_key(login, password)
+            self.set_vault_key(login, password)
             self.save_vault()
-
-            print(f'Empty {self.name}:', self.vault)
-            print(f'Upload data to the {self.name}')
         else:
             raise err.UserExists()
 
@@ -79,7 +92,7 @@ class Vault:
 
     def set_vault_key(self, login, password):
         log_str = f'{login}-{password}'
-        return self.encoder.encode(log_str)
+        self.key = self.encoder.encode(log_str)
 
     def get_vault_key(self, login, password):
         log_str = f'{login}-{password}'
@@ -116,11 +129,14 @@ class Vault:
     def save_vault(self):
         self.vault = self.encode_vault()
         with shelve.open(VAULT_DB) as vault:
-            vault[self.key] = self.vault
+            vault[self.key] = {
+                'DB': VAULT_DIR,
+                VAULT_TITLE: self.vault
+            }
 
     def load_vault(self):
         with shelve.open(VAULT_DB) as vault:
-            return vault.get(self.key)
+            return vault.get(self.key).get(VAULT_TITLE)
 
     def get_json_path(self):
         return f"{VAULT_DB}-{str(time.time()).replace('.','')}.json"
@@ -129,11 +145,11 @@ class Vault:
         with open(name, 'w') as file:
             json.dump(self.decode_vault(), file)
         if verbose:
-            print(f'Dump {self.name}: {name}')
+            show_warning(f'Dump {self.name}: {name}')
         else:
             return name
 
-    def load_data(self, path, verbose=True):
+    def load_data(self, path):
         try:
             with open(path, 'r') as file:
                 self.vault = json.load(file)
@@ -143,28 +159,35 @@ class Vault:
         except (json.decoder.JSONDecodeError, UnicodeDecodeError):
             raise err.InvalidJSON(path)
 
-        if verbose:
-            print(f'Load {self.name}: {path}')
-        else:
-            return path
+        return path
 
     def remove_data(self):
         with shelve.open(VAULT_DB) as vault:
             del vault[self.key]
 
-        print(f'Remove {self.name}: {self.encoder.decode(self.key)}')
+        show_warning(
+            f'Remove {self.name}: {self.encoder.decode(self.key)}'
+        )
 
     def find_database(self, verbose=True):
         if verbose:
-            print(f'Find {self.name} DB: {VAULT_DIR}')
+            show_warning(f'Find {self.name} DB: {VAULT_DB_UI}')
         else:
-            return VAULT_DIR
+            return VAULT_DB_UI
+
+    def version(self):
+        show_warning(f'Version: {VERSION}')
 
 
 def main():
-    tprint('\nVAULT', font='lockergnome')
+    tprint(f'\n{VAULT_TITLE.upper()}', font=TITLE_FONT)
 
-    parser = argparse.ArgumentParser(description='Vault')
+    parser = argparse.ArgumentParser(description=VAULT_TITLE)
+
+    # requi{RED}
+    parser.add_argument(
+        'login', metavar='login', type=str, help='user login'
+    )
 
     # actions
     group = parser.add_mutually_exclusive_group()
@@ -174,7 +197,7 @@ def main():
     )
     group.add_argument(
         '-up', '--sign_up', action='store_true',
-        help='use to sign up and create vault'
+        help='use to sign up and create empty vault'
     )
     group.add_argument(
         '-dp', '--dump', action='store_true',
@@ -190,23 +213,34 @@ def main():
     )
     # info actions
     group.add_argument(
-        '--find', action='store_true',
+        '-f', '--find', action='store_true',
         help='find database directory'
+    )
+    group.add_argument(
+        '-v', '--version', action='store_true',
+        help='show version'
     )
 
     args = parser.parse_args()
 
-    lpv = LoginPasswordValidator()
     vlt = Vault(VAULT_TITLE)
+
     if args.sign_up:
+        lpv = LoginPasswordValidator(args.login)
         try:
             lpv.is_valid()
             vlt.set_user(lpv.login, lpv.password)
+            tui.ViewApp.run(title=vlt.name, vlt=vlt)
         except (err.InvalidEmail, err.InvalidPassword) as e:
-            print(e)
+            show_error(e)
         except err.UserExists as e:
-            print(e)
+            show_error(e)
+    elif args.find:
+        vlt.find_database()
+    elif args.version:
+        vlt.version()
     else:
+        lpv = LoginPasswordValidator(args.login)
         try:
             vlt.get_user(lpv.login, lpv.password)
 
@@ -215,18 +249,16 @@ def main():
             elif args.path:
                 try:
                     vlt.load_data(args.path)
-                    ui.ViewApp.run(title=vlt.name, vlt=vlt)
+                    tui.ViewApp.run(title=vlt.name, vlt=vlt)
                 except (err.FileNotFound, err.InvalidJSON) as e:
-                    print(e)
+                    show_error(e)
             elif args.remove:
                 vlt.remove_data()
-            elif args.find:
-                vlt.find_database()
             else:
-                ui.ViewApp.run(title=vlt.name, vlt=vlt)
+                tui.ViewApp.run(title=vlt.name, vlt=vlt)
 
         except err.LoginFailed as e:
-            print(e)
+            show_error(e)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,13 @@
 # vault.py
 
+from rich import print
+
+from settings import (
+    ERROR_MESSAGE,
+    WARNING_MESSAGE
+)
+
+
 class VaultException(Exception):
     def __str__(self):
         return self.message
@@ -38,4 +46,12 @@ class InvalidPassword(VaultException):
         '- At least 1 character from [_-@$!%*#?&]'
     ]
     help_message = '\n'.join(help_messages)
-    message = f"Use strong password:\n{help_message}"
+    message = f'Use strong password:\n{help_message}'
+
+
+def show_warning(message):
+    print(WARNING_MESSAGE.format(message))
+
+
+def show_error(message):
+    print(ERROR_MESSAGE.format(message))
