@@ -11,6 +11,7 @@ from widgets import (
     CellGrid,
     CellButton,
     CopyButton,
+    EraseButton,
     LoadTree,
     LoadScroll,
     Notification
@@ -183,7 +184,7 @@ class ViewApp(App):
         self.load_json.hscroll = LoadScroll(vertical=False)
         self.load_json.visible = False
 
-        self.erase_data = CopyButton(
+        self.erase_data = EraseButton(
             title='Erase', label=''
         )
         self.erase_data.visible = False

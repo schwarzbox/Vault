@@ -25,6 +25,7 @@ GRAY = '#666666'
 # icons
 KEY = '🔑'
 COPY = '✏️'
+ERASE = '❌'
 CLOSE = '✕'
 # art
 TITLE_FONT = 'lockergnome'

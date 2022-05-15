@@ -20,7 +20,7 @@ from textual.widgets import (
 
 from mixins import ButtonMixin
 from settings import (
-    BRIGHT_GREEN, COPY, GRAY, GREEN, KEY, YELLOW
+    BRIGHT_GREEN, COPY, ERASE, GRAY, GREEN, KEY, YELLOW
 )
 
 NodeDataType = TypeVar('NodeDataType')
@@ -74,6 +74,23 @@ class CopyButton(ButtonMixin, Button):
             loc = self.action()
             if loc:
                 pc.copy(loc)
+        self.set_timer(1, lambda: self.hide())
+
+
+class EraseButton(ButtonMixin, Button):
+    def __init__(self, *args, title, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.title = title
+        self.on_click_label = ERASE
+        self.action = None
+
+    def hide(self):
+        self.visible = False
+
+    def on_click(self) -> None:
+        super().on_click()
+        if self.action:
+            self.action()
         self.set_timer(1, lambda: self.hide())
 
 
