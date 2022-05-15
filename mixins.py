@@ -9,7 +9,7 @@ from rich.text import Text
 
 from textual.reactive import Reactive
 
-from settings import BRIGHT_GREEN, GREEN, YELLOW
+from settings import GREEN, YELLOW
 
 
 class ButtonMixin:
@@ -23,7 +23,7 @@ class ButtonMixin:
                 self.on_click_label if self.clicked else self.label,
             ),
             vertical='middle',
-            style=YELLOW if self.clicked else BRIGHT_GREEN
+            style=YELLOW if self.clicked else GREEN
         )
         return Panel(
             renderable,

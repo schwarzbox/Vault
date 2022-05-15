@@ -7,7 +7,6 @@ from textual.app import App
 from textual.widgets import Footer, ScrollView, TreeClick
 
 import errors as err
-
 from widgets import (
     CellGrid,
     CellButton,
@@ -16,20 +15,7 @@ from widgets import (
     LoadScroll,
     Notification
 )
-
-from settings import (
-    AUTHOR,
-    CLOSE,
-    DESCRIPTION,
-    EMAIL,
-    GREEN,
-    LICENSE,
-    RED,
-    VAULT_TITLE,
-    VERSION,
-    URL,
-    YELLOW
-)
+from settings import CLOSE, GREEN, RED, URL, YELLOW
 
 console = Console()
 
@@ -48,6 +34,7 @@ class ViewApp(App):
 
         self.dump_json.visible = not self.dump_json.visible
         self.load_json.visible = False
+        self.erase_data.visible = False
         self.find_db.visible = False
         self.about_vault.visible = False
         self.cells.visible = True
@@ -57,14 +44,34 @@ class ViewApp(App):
     def action_load_data(self):
         self.load_json.visible = not self.load_json.visible
         self.dump_json.visible = False
+        self.erase_data.visible = False
         self.find_db.visible = False
         self.about_vault.visible = False
         self.cells.visible = not self.load_json.visible
 
         self.notification.visible = False
 
+    def _erase_data(self):
+        self.vlt.erase_data()
+        self.cells.update_cells(
+            cells=self._create_cells()
+        )
+
+    def action_erase_data(self):
+        self.erase_data.label = self.vlt.encoder.decode(self.vlt.key)
+        self.erase_data.action = self._erase_data
+
+        self.erase_data.visible = not self.erase_data.visible
+        self.dump_json.visible = False
+        self.load_json.visible = False
+        self.find_db.visible = False
+        self.about_vault.visible = False
+        self.cells.visible = True
+
+        self.notification.visible = False
+
     def action_find_database(self):
-        self.find_db.label = self.vlt.vault_db_ui
+        self.find_db.label = self.vlt.vault_db
         self.find_db.action = lambda: self.vlt.find_database(
             verbose=False
         )
@@ -72,6 +79,7 @@ class ViewApp(App):
         self.find_db.visible = not self.find_db.visible
         self.dump_json.visible = False
         self.load_json.visible = False
+        self.erase_data.visible = False
         self.about_vault.visible = False
         self.cells.visible = True
 
@@ -96,7 +104,7 @@ class ViewApp(App):
         directory = message.node.data.get('dir', None)
 
         if path:
-            title = f'Load {self.vlt.name}'
+            title = 'Load'
             try:
                 loc = self.vlt.load_data(path)
                 self.cells.update_cells(
@@ -105,7 +113,11 @@ class ViewApp(App):
                 label = os.path.basename(loc)
                 self.action_load_data()
                 color = GREEN
-            except (err.FileNotFound, err.InvalidJSON) as e:
+            except (
+                err.FileNotFound,
+                err.InvalidJSON,
+                err.InvalidDataFormat
+            ) as e:
                 title = 'Error'
                 label = str(e)
                 color = RED
@@ -145,10 +157,11 @@ class ViewApp(App):
 
     async def on_load(self) -> None:
         await self.bind('ctrl+q', 'quit', CLOSE)
-        await self.bind('ctrl+d', 'dump_data', 'Dump JSON')
-        await self.bind('ctrl+l', 'load_data', 'Load JSON')
-        await self.bind('ctrl+f', 'find_database', 'Find DB')
-        await self.bind('ctrl+a', 'about_vault', 'About')
+        await self.bind('d', 'dump_data', 'Dump JSON')
+        await self.bind('l', 'load_data', 'Load JSON')
+        await self.bind('e', 'erase_data', 'Erase Data')
+        await self.bind('f', 'find_database', 'Find DB')
+        await self.bind('a', 'about_vault', 'About')
 
     async def on_mount(self) -> None:
         await self.view.dock(Footer(), edge='bottom', z=2)
@@ -161,7 +174,7 @@ class ViewApp(App):
         )
 
         self.dump_json = CopyButton(
-            title=f'Dump {self.vlt.name}', label=''
+            title='Dump', label=''
         )
         self.dump_json.visible = False
 
@@ -170,17 +183,19 @@ class ViewApp(App):
         self.load_json.hscroll = LoadScroll(vertical=False)
         self.load_json.visible = False
 
+        self.erase_data = CopyButton(
+            title='Erase', label=''
+        )
+        self.erase_data.visible = False
+
         self.find_db = CopyButton(
-            title=f'Find {self.vlt.name} DB', label=''
+            title='Find', label=''
         )
         self.find_db.visible = False
 
-        info = f'{VAULT_TITLE} v{VERSION} {LICENSE}'
-        desc = f'{DESCRIPTION}\n{URL}'
-        author = f'{AUTHOR}\n{EMAIL}'
         self.about_vault = CopyButton(
-            title=f'About {self.vlt.name}',
-            label=f'{info}\n\n{desc}\n\n{author}'
+            title='About',
+            label=self.vlt.about(verbose=False)
         )
         self.about_vault.visible = False
 
@@ -189,6 +204,7 @@ class ViewApp(App):
         await self.view.dock(self.notification, z=2)
         await self.view.dock(self.dump_json, z=2)
         await self.view.dock(self.load_json, z=2)
+        await self.view.dock(self.erase_data, z=2)
         await self.view.dock(self.find_db, z=2)
         await self.view.dock(self.about_vault, z=2)
         await self.view.dock(self.cells, z=1)
@@ -196,6 +212,7 @@ class ViewApp(App):
         if self.vlt.is_empty():
             self.notification.show(
                 'Warning',
-                f'Empty {self.vlt.name}: Load JSON',
-                YELLOW
+                'Empty: Load JSON',
+                YELLOW,
+                3
             )

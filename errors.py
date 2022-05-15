@@ -4,6 +4,7 @@ from rich import print
 
 from settings import (
     ERROR_MESSAGE,
+    INFO_MESSAGE,
     WARNING_MESSAGE
 )
 
@@ -33,6 +34,12 @@ class InvalidJSON(VaultException):
         super().__init__(self.message)
 
 
+class InvalidDataFormat(VaultException):
+    def __init__(self, path, message='Invalid Data Format:'):
+        self.message = f'{message} {path}'
+        super().__init__(self.message)
+
+
 class InvalidEmail(VaultException):
     message = 'Use valid email'
 
@@ -47,6 +54,10 @@ class InvalidPassword(VaultException):
     ]
     help_message = '\n'.join(help_messages)
     message = f'Use strong password:\n{help_message}'
+
+
+def show_info(message):
+    print(INFO_MESSAGE.format(message))
 
 
 def show_warning(message):

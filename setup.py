@@ -26,7 +26,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        'art', 'appdirs', 'cryptography', 'pyperclip', 'textual'
+        'art', 'appdirs', 'cryptography', 'pyperclip', 'requests', 'textual'
     ],
     python_requires='>=3.9',
     entry_points={

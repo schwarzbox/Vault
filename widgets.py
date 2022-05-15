@@ -19,7 +19,6 @@ from textual.widgets import (
 )
 
 from mixins import ButtonMixin
-
 from settings import (
     BRIGHT_GREEN, COPY, GRAY, GREEN, KEY, YELLOW
 )
@@ -73,7 +72,8 @@ class CopyButton(ButtonMixin, Button):
         super().on_click()
         if self.action:
             loc = self.action()
-            pc.copy(loc)
+            if loc:
+                pc.copy(loc)
         self.set_timer(1, lambda: self.hide())
 
 
@@ -90,7 +90,7 @@ class Notification(Widget):
             Align.center(
                 Text(self.label),
                 vertical='middle',
-                style=BRIGHT_GREEN
+                style=GREEN
             ),
             title=self.title,
             title_align='left',

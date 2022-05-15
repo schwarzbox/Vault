@@ -7,7 +7,7 @@ AUTHOR = 'Alexander Veledzimovich'
 EMAIL = 'veledz@gmail.com'
 DESCRIPTION = 'Command line password manager'
 LICENSE = 'MIT'
-VERSION = 0.8
+VERSION = 0.9
 URL = 'https://github.com/schwarzbox/Vault'
 # vault
 VAULT_TITLE = 'Vault'
@@ -29,5 +29,6 @@ CLOSE = '✕'
 # art
 TITLE_FONT = 'lockergnome'
 # messages
-ERROR_MESSAGE = '[red]{}[/red]'
+INFO_MESSAGE = '[green]{}[/green]'
 WARNING_MESSAGE = '[yellow]{}[/yellow]'
+ERROR_MESSAGE = '[red]{}[/red]'
