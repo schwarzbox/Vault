@@ -14,7 +14,7 @@ You need python 3.9 to create executable and run <strong>vault</strong> password
 curl -L https://github.com/schwarzbox/Vault/archive/master.zip --output Vault.zip
 unzip Vault.zip
 cd Vault-master
-# create virtual environment to install shiv
+# create virtual environment to install shiv and appdirs
 python3 -m venv venv-shiv
 . venv-shiv/bin/activate
 pip3 install shiv appdirs
@@ -23,24 +23,19 @@ shiv -c vault -o vault --preamble preamble.py . --use-feature=in-tree-build
 deactivate
 # remove venv-shiv
 rm -rf venv-shiv
-cd ..
 ```
 
 # First run
 
 ```bash
-vault -h
+./vault -h
 ```
 
 ![Screenshot](screenshot/screenshot2.png)
 
 ```bash
-# enter login and run sign-up process
-vault av@myemail.com -up
-# sign-in with login and check your empty vault
-vault av@myemail.com -in
-# you can omit flag -in
-vault av@myemail.com
+# enter login and run sign up process
+./vault av@myemail.com -up
 ```
 
 # Prepare JSON with your sensetive data
@@ -66,10 +61,10 @@ See example below or use sample.json for testing password manager.
 }
 ```
 
-Load sample.json using command line or use TUI after sign-in.
+Load sample.json using command line or use TUI after sign in.
 
 ```bash
-vault av@myemail.com --load sample.json
+./vault av@myemail.com --load sample.json
 ```
 
 # Move to /usr/local/bin
@@ -81,6 +76,15 @@ mv vault /usr/local/bin
 ```
 
 After moving <strong>vault</strong> you can remove Vault-master and Vault.zip.
+
+Now you can use <strong>vault</strong> as usual.
+
+```bash
+# sign-in with login
+vault av@myemail.com -in
+# you can omit flag -in
+vault av@myemail.com
+```
 
 # Encryption
 
