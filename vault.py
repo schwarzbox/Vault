@@ -11,26 +11,9 @@ VAULT
 # Copyright (c) 2022 Alexander Veledzimovich veledz@gmail.com
 
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
+# shiv -c vault -o vault --preamble preamble.py .
 
-# v1.0 TUI authentication?
-
-import argparse
-import getpass
-import json
-import os
-import re
-import time
-
-from art import tprint
-
-from cryptography.fernet import InvalidToken
-
-import requests
-
-from rich import print
-
-import crypto
-import errors as err
+import tui
 from settings import (
     AUTHOR,
     DESCRIPTION,
@@ -45,7 +28,17 @@ from settings import (
     VERSION,
     URL
 )
-import tui
+import errors as err
+import crypto
+import requests
+from cryptography.fernet import InvalidToken
+from art import tprint
+import time
+import re
+import os
+import json
+import getpass
+import argparse
 
 
 __version__ = VERSION
@@ -66,6 +59,7 @@ class LoginPasswordValidator:
 class Vault:
     def __init__(self):
         self.vault = {}
+        self.vault_dir = VAULT_DIR
         self.vault_db = VAULT_DB
 
         if not os.path.isdir(VAULT_DIR):
@@ -114,8 +108,16 @@ class Vault:
                 path = self.vault_db
                 with open(path, 'r') as file:
                     return json.load(file)
+        except FileNotFoundError:
+            raise err.DataBaseNotFound(
+                os.path.basename(path)
+            )
         except (json.decoder.JSONDecodeError, UnicodeDecodeError):
             raise err.InvalidJSON(path)
+        except requests.exceptions.InvalidURL:
+            raise err.InvalidURL(url)
+        except requests.exceptions.MissingSchema:
+            raise err.InvalidURL(url)
 
     def get_vault_key(self, login, password, database):
         log_str = f'{login}-{password}'
@@ -151,24 +153,35 @@ class Vault:
     def save_vault(self):
         self.vault = self.encode_vault()
         data = {}
-        with open(self.vault_db, 'r') as file:
-            data = json.load(file)
+        try:
+            with open(self.vault_db, 'r') as file:
+                data = json.load(file)
 
-        with open(self.vault_db, 'w') as file:
-            data[self.key] = self.vault
-            json.dump(data, file)
+            with open(self.vault_db, 'w') as file:
+                data[self.key] = self.vault
+                json.dump(data, file)
+        except FileNotFoundError:
+            raise err.DataBaseNotFound(
+                os.path.basename(self.vault_db)
+            )
 
     def load_vault(self, database):
         return database.get(self.key)
 
     def remove_vault(self):
         data = {}
-        with open(self.vault_db, 'r') as file:
-            data = json.load(file)
+        try:
+            with open(self.vault_db, 'r') as file:
+                data = json.load(file)
 
-        with open(self.vault_db, 'w') as file:
-            del data[self.key]
-            json.dump(data, file)
+            with open(self.vault_db, 'w') as file:
+                del data[self.key]
+                json.dump(data, file)
+
+        except FileNotFoundError:
+            raise err.DataBaseNotFound(
+                os.path.basename(self.vault_db)
+            )
 
         err.show_warning(
             f'Remove vault: {self.encoder.decode(self.key)}'
@@ -204,9 +217,9 @@ class Vault:
 
     def find_database(self, verbose=True):
         if verbose:
-            err.show_warning(f'Find DB: {self.vault_db}')
+            err.show_warning(f'Find DB: {self.vault_dir}')
         else:
-            return self.vault_db
+            return self.vault_dir
 
     def about(self, verbose=True):
         info = f'{VAULT_TITLE} v{VERSION} {LICENSE}'
@@ -270,7 +283,7 @@ def main():
     # info actions
     group.add_argument(
         '-f', '--find', action='store_true',
-        help='find local DB'
+        help='find local DB dir'
     )
     group.add_argument(
         '-a', '--about', action='store_true',
@@ -298,9 +311,13 @@ def main():
             lpv.is_valid()
             vlt.set_user(lpv.login, lpv.password)
             tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
-        except (err.InvalidEmail, err.InvalidPassword) as e:
-            err.show_error(e)
-        except err.UserExists as e:
+        except (
+            err.DataBaseNotFound,
+            err.InvalidJSON,
+            err.InvalidEmail,
+            err.InvalidPassword,
+            err.UserExists
+        ) as e:
             err.show_error(e)
     elif args.find:
         vlt.find_database()
@@ -319,15 +336,8 @@ def main():
             elif args.dump:
                 vlt.dump_data(vlt.get_json_path())
             elif args.path:
-                try:
-                    vlt.load_data(args.path)
-                    tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
-                except (
-                    err.FileNotFound,
-                    err.InvalidJSON,
-                    err.InvalidDataFormat
-                ) as e:
-                    err.show_error(e)
+                vlt.load_data(args.path)
+                tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
             elif args.erase:
                 vlt.erase_data()
                 tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
@@ -335,7 +345,12 @@ def main():
                 tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
 
         except (
-            err.FileNotFound, err.InvalidJSON, err.LoginFailed
+            err.InvalidURL,
+            err.DataBaseNotFound,
+            err.FileNotFound,
+            err.InvalidJSON,
+            err.InvalidDataFormat,
+            err.LoginFailed
         ) as e:
             err.show_error(e)
 

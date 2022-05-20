@@ -22,6 +22,12 @@ class LoginFailed(VaultException):
     message = 'User unknown'
 
 
+class DataBaseNotFound(VaultException):
+    def __init__(self, path, message='Data Base not found:'):
+        self.message = f'{message} {path}'
+        super().__init__(self.message)
+
+
 class FileNotFound(VaultException):
     def __init__(self, path, message='File not found:'):
         self.message = f'{message} {path}'
@@ -36,6 +42,12 @@ class InvalidJSON(VaultException):
 
 class InvalidDataFormat(VaultException):
     def __init__(self, path, message='Invalid Data Format:'):
+        self.message = f'{message} {path}'
+        super().__init__(self.message)
+
+
+class InvalidURL(VaultException):
+    def __init__(self, path, message='Invalid URL:'):
         self.message = f'{message} {path}'
         super().__init__(self.message)
 

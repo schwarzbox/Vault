@@ -53,10 +53,16 @@ class ViewApp(App):
         self.notification.visible = False
 
     def _erase_data(self):
-        self.vlt.erase_data()
-        self.cells.update_cells(
-            cells=self._create_cells()
-        )
+        try:
+            self.vlt.erase_data()
+            self.cells.update_cells(
+                cells=self._create_cells()
+            )
+        except err.DataBaseNotFound as e:
+            title = 'Error'
+            label = str(e)
+            color = RED
+            self.notification.show(title, label, color)
 
     def action_erase_data(self):
         self.erase_data.label = self.vlt.encoder.decode(self.vlt.key)
@@ -72,7 +78,7 @@ class ViewApp(App):
         self.notification.visible = False
 
     def action_find_database(self):
-        self.find_db.label = self.vlt.vault_db
+        self.find_db.label = self.vlt.vault_dir
         self.find_db.action = lambda: self.vlt.find_database(
             verbose=False
         )
@@ -115,6 +121,7 @@ class ViewApp(App):
                 self.action_load_data()
                 color = GREEN
             except (
+                err.DataBaseNotFound,
                 err.FileNotFound,
                 err.InvalidJSON,
                 err.InvalidDataFormat

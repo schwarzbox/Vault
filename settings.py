@@ -7,7 +7,7 @@ AUTHOR = 'Alexander Veledzimovich'
 EMAIL = 'veledz@gmail.com'
 DESCRIPTION = 'Command line password manager'
 LICENSE = 'MIT'
-VERSION = 0.9
+VERSION = 1.0
 URL = 'https://github.com/schwarzbox/Vault'
 # vault
 VAULT_TITLE = 'Vault'

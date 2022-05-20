@@ -1,6 +1,6 @@
 # vault
 
-v0.9
+v1.0
 
 Command line password manager.
 
@@ -133,7 +133,7 @@ vault av@myemail.com -er
 vault av@myemail.com -rm
 ```
 
-# Find local database
+# Find local database dir
 
 Iternally <strong>Vault</strong> use python package <strong>appdirs</strong> to determine where to save local encrypted database. For MacOS it is "~/Library/Application Support/VaultDB".
 
@@ -153,6 +153,10 @@ vault --about
 vault --version
 ```
 
-# Road map
+# Road Map
 
-v1.0 TUI authentication (maybe)
+v1.1
+- pipes?
+v1.2
+- TUI CRUD
+- Remove dependency from appdirs during install
