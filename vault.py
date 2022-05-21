@@ -13,6 +13,18 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 # shiv -c vault -o vault --preamble preamble.py .
 
+# add --source instead off --url
+# add TUI for select remote source at runtime for same user
+# add and catch error DataBaseNotFound
+# add and catch Invalid URL
+# add and catch ActionNotAllowedForRemote
+# remove dependency from appdirs during install
+# refactoring
+
+# add new screenshots
+# release
+
+# pipes?
 
 from appdirs import user_data_dir
 
@@ -23,7 +35,6 @@ from settings import (
     EMAIL,
     EMAIL_REGEXP,
     LICENSE,
-    LOCAL,
     PASSWORD_REGEXP,
     TITLE_FONT,
     VAULT_DB,
@@ -60,14 +71,15 @@ class LoginPasswordValidator:
 
 
 class Vault:
-    def __init__(self, source=LOCAL):
+    def __init__(self, source=None):
         self.vault = {}
-        self.source = source
+
         self.local_dir = user_data_dir(f'{VAULT_TITLE}DB')
-        if self.is_local_source:
-            self.set_local_source()
-        else:
-            self.set_remote_source()
+        self.set_source()
+
+        self.set_default_database()
+
+        self.set_source(source)
 
     @property
     def is_empty(self):
@@ -75,23 +87,23 @@ class Vault:
 
     @property
     def is_local_source(self):
-        return self.source == LOCAL
+        return not self.vault_db.startswith('http')
 
-    def get_key_str(self, login, password):
-        return f'{login} {password}'
+    def set_source(self, source=None):
+        if source is not None:
+            self.vault_db = source
+        else:
+            self.vault_db = f'{self.local_dir}/{VAULT_DB}'
 
-    def set_local_source(self):
-        self.vault_dir = self.local_dir
-        self.vault_db = f'{self.vault_dir}/{VAULT_DB}'
-        if not os.path.isdir(self.vault_dir):
-            os.mkdir(self.vault_dir)
+    def set_default_database(self):
+        if not os.path.isdir(self.local_dir):
+            os.mkdir(self.local_dir)
         if not os.path.isfile(self.vault_db):
             with open(self.vault_db, 'w') as file:
                 json.dump(self.vault, file)
 
-    def set_remote_source(self):
-        self.vault_dir = os.path.dirname(self.source)
-        self.vault_db = self.source
+    def get_key_str(self, login, password):
+        return f'{login} {password}'
 
     def set_user(self, login, password):
         self.encoder = crypto.Encoder(login, password)
@@ -281,8 +293,8 @@ def main():
     )
     # select source
     parser.add_argument(
-        '-src', '--source', dest='source', type=str, default=LOCAL,
-        help='load encrypted data from remote DB to local vault'
+        '-src', '--source', dest='source', type=str,
+        help='load encrypted data from custom DB to local vault'
     )
 
     # actions

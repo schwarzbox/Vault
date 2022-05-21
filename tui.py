@@ -18,7 +18,7 @@ from widgets import (
     LoadScroll,
     Notification
 )
-from settings import ABOUT, CLOSE, LOCAL, RED, URL, YELLOW
+from settings import ABOUT, CLOSE, RED, URL, YELLOW
 
 console = Console()
 
@@ -28,6 +28,11 @@ class ViewApp(App):
         super().__init__(*args, **kwargs)
         self.vlt = vlt
 
+    def _hide_pop_up_view(self, *exclude):
+        for view in self.pop_up_views:
+            if view not in exclude:
+                view.visible = False
+
     def action_dump_data(self):
         loc = self.vlt.get_json_path()
         self.dump_json.label = os.path.basename(loc)
@@ -36,25 +41,13 @@ class ViewApp(App):
         )
 
         self.dump_json.visible = not self.dump_json.visible
-        self.input_remote.visible = False
-        self.input_button.visible = False
-        self.load_json.visible = False
-        self.erase_data.visible = False
-        self.find_db.visible = False
-        self.about_vault.visible = False
+        self._hide_pop_up_view(self.dump_json)
         self.cells.visible = True
-        self.notification.visible = False
 
     def action_load_data(self):
         self.load_json.visible = not self.load_json.visible
-        self.input_remote.visible = False
-        self.input_button.visible = False
-        self.dump_json.visible = False
-        self.erase_data.visible = False
-        self.find_db.visible = False
-        self.about_vault.visible = False
+        self._hide_pop_up_view(self.load_json)
         self.cells.visible = not self.load_json.visible
-        self.notification.visible = False
 
     def _erase_data(self):
         try:
@@ -74,14 +67,8 @@ class ViewApp(App):
         self.erase_data.action = self._erase_data
 
         self.erase_data.visible = not self.erase_data.visible
-        self.input_remote.visible = False
-        self.input_button.visible = False
-        self.dump_json.visible = False
-        self.load_json.visible = False
-        self.find_db.visible = False
-        self.about_vault.visible = False
+        self._hide_pop_up_view(self.erase_data)
         self.cells.visible = True
-        self.notification.visible = False
 
     def action_find_database(self):
         loc = self.vlt.get_database_path()
@@ -91,27 +78,20 @@ class ViewApp(App):
         )
 
         self.find_db.visible = not self.find_db.visible
-        self.input_remote.visible = False
-        self.input_button.visible = False
-        self.dump_json.visible = False
-        self.load_json.visible = False
-        self.erase_data.visible = False
-        self.about_vault.visible = False
+        self._hide_pop_up_view(self.find_db)
         self.cells.visible = True
-        self.notification.visible = False
 
     def _source_data(self):
         login, password = (
             self.vlt.encoder.decode(self.vlt.key).split(' ')
         )
-        source = self.input_remote.content
+        source = self.input_source.content
 
         try:
-            self.input_remote.content = ''
-            self.input_remote.hide()
+            self.input_source.content = ''
+            self.input_source.hide()
 
-            self.vlt.source = source
-            self.vlt.set_remote_source()
+            self.vlt.set_source(source)
             self.vlt.get_user(login, password)
 
         except (
@@ -122,41 +102,43 @@ class ViewApp(App):
             err.InvalidURL,
             err.LoginFailed
         ) as e:
-            self.vlt.source = LOCAL
-            self.vlt.set_local_source()
-            self.vlt.get_user(login, password)
-
             title = 'Error'
             label = str(e)
             color = RED
+            try:
+                self.vlt.set_source()
+                self.vlt.get_user(login, password)
+            except err.LoginFailed:
+                self.vlt.vault = {}
+                self.vlt.set_user(login, password)
+            except err.DataBaseNotFound:
+                self.vlt.vault = {}
+                self.vlt.set_default_database()
+                self.vlt.set_user(login, password)
+            except (
+                err.InvalidJSON,
+                err.InvalidDataFormat
+            ) as e:
+                label = str(e)
+
             self.notification.show(title, label, color)
 
         self.cells.update_cells(cells=self._create_cells())
 
     def action_source_data(self):
-        self.input_remote.visible = not self.input_remote.visible
-        self.input_button.visible = not self.input_button.visible
         self.input_button.action = self._source_data
 
-        self.dump_json.visible = False
-        self.load_json.visible = False
-        self.erase_data.visible = False
-        self.find_db.visible = False
-        self.about_vault.visible = False
+        self.input_source.visible = not self.input_source.visible
+        self.input_button.visible = not self.input_button.visible
+        self._hide_pop_up_view(self.input_button, self.input_source)
         self.cells.visible = True
-        self.notification.visible = False
 
     def action_about_vault(self):
         self.about_vault.action = lambda: URL
 
         self.about_vault.visible = not self.about_vault.visible
-        self.input_remote.visible = False
-        self.input_button.visible = False
-        self.dump_json.visible = False
-        self.load_json.visible = False
-        self.find_db.visible = False
+        self._hide_pop_up_view(self.about_vault)
         self.cells.visible = True
-        self.notification.visible = False
 
     async def handle_tree_click(
         self, message: TreeClick[dict]
@@ -246,9 +228,9 @@ class ViewApp(App):
 
         self.find_db = CopyButton(title='Find', label='')
 
-        self.input_remote = InputText(title='Source')
+        self.input_source = InputText(title='Source')
         self.input_button = ActionButton(
-            title='', label='Remote'
+            title='', label='OK'
         )
 
         self.about_vault = CopyButton(
@@ -265,7 +247,7 @@ class ViewApp(App):
         await self.view.dock(self.find_db, z=2)
         await self.view.dock(self.about_vault, z=2)
         await self.view.dock(
-            self.input_remote, self.input_button, z=2
+            self.input_source, self.input_button, z=2
         )
         await self.view.dock(self.cells, z=1)
 
@@ -276,3 +258,14 @@ class ViewApp(App):
                 YELLOW,
                 3
             )
+
+        self.pop_up_views = [
+            self.dump_json,
+            self.input_source,
+            self.input_button,
+            self.load_json,
+            self.erase_data,
+            self.find_db,
+            self.about_vault,
+            self.notification,
+        ]

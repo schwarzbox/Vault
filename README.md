@@ -107,7 +107,7 @@ Vault never save your decrypted password. Still no way to restore it and decode 
 
 # Remote access
 
-<strong>Vault</strong> creates local database and --source flag by default set to 'local'. You can provide remote source.
+<strong>Vault</strong> creates default database and --source flag by set to None. You can provide temporary remote or local source for current session.
 
 Upload encrypted database in GitHub or anywere else.
 
