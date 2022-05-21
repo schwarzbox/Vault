@@ -13,6 +13,9 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 # shiv -c vault -o vault --preamble preamble.py .
 
+
+from appdirs import user_data_dir
+
 import tui
 from settings import (
     AUTHOR,
@@ -20,10 +23,10 @@ from settings import (
     EMAIL,
     EMAIL_REGEXP,
     LICENSE,
+    LOCAL,
     PASSWORD_REGEXP,
     TITLE_FONT,
     VAULT_DB,
-    VAULT_DIR,
     VAULT_TITLE,
     VERSION,
     URL
@@ -57,19 +60,38 @@ class LoginPasswordValidator:
 
 
 class Vault:
-    def __init__(self):
+    def __init__(self, source=LOCAL):
         self.vault = {}
-        self.vault_dir = VAULT_DIR
-        self.vault_db = VAULT_DB
+        self.source = source
+        self.local_dir = user_data_dir(f'{VAULT_TITLE}DB')
+        if self.is_local_source:
+            self.set_local_source()
+        else:
+            self.set_remote_source()
 
-        if not os.path.isdir(VAULT_DIR):
-            os.mkdir(VAULT_DIR)
+    @property
+    def is_empty(self):
+        return not bool(self.vault)
+
+    @property
+    def is_local_source(self):
+        return self.source == LOCAL
+
+    def get_key_str(self, login, password):
+        return f'{login} {password}'
+
+    def set_local_source(self):
+        self.vault_dir = self.local_dir
+        self.vault_db = f'{self.vault_dir}/{VAULT_DB}'
+        if not os.path.isdir(self.vault_dir):
+            os.mkdir(self.vault_dir)
         if not os.path.isfile(self.vault_db):
             with open(self.vault_db, 'w') as file:
                 json.dump(self.vault, file)
 
-    def is_empty(self):
-        return not bool(self.vault)
+    def set_remote_source(self):
+        self.vault_dir = os.path.dirname(self.source)
+        self.vault_db = self.source
 
     def set_user(self, login, password):
         self.encoder = crypto.Encoder(login, password)
@@ -81,9 +103,9 @@ class Vault:
         else:
             raise err.UserExists()
 
-    def get_user(self, login, password, url=None):
+    def get_user(self, login, password):
         self.encoder = crypto.Encoder(login, password)
-        database = self.get_database(url)
+        database = self.get_database()
         self.key = self.get_vault_key(login, password, database)
         if self.key is not None:
             self.vault = self.load_vault(database)
@@ -91,39 +113,41 @@ class Vault:
             raise err.LoginFailed()
 
     def set_vault_key(self, login, password):
-        log_str = f'{login}-{password}'
-        self.key = self.encoder.encode(log_str)
+        self.key = self.encoder.encode(
+            self.get_key_str(login, password)
+        )
 
-    def get_database(self, url=None):
-        path = None
+    def get_database(self):
         try:
-            if url:
-                path = url
-                response = requests.get(path)
+            if self.is_local_source:
+                with open(self.vault_db, 'r') as file:
+                    return json.load(file)
+            else:
+                response = requests.get(self.vault_db)
+
                 if response.ok:
                     return json.loads(response.content)
                 else:
-                    raise err.FileNotFound(path)
-            else:
-                path = self.vault_db
-                with open(path, 'r') as file:
-                    return json.load(file)
+                    raise err.FileNotFound(self.vault_db)
+
         except FileNotFoundError:
             raise err.DataBaseNotFound(
-                os.path.basename(path)
+                os.path.basename(self.vault_db)
             )
         except (json.decoder.JSONDecodeError, UnicodeDecodeError):
-            raise err.InvalidJSON(path)
+            raise err.InvalidJSON(self.vault_db)
         except requests.exceptions.InvalidURL:
-            raise err.InvalidURL(url)
+            raise err.InvalidURL(self.vault_db)
         except requests.exceptions.MissingSchema:
-            raise err.InvalidURL(url)
+            raise err.InvalidURL(self.vault_db)
+        except AttributeError:
+            raise err.InvalidDataFormat(self.vault_db)
 
     def get_vault_key(self, login, password, database):
-        log_str = f'{login}-{password}'
+        key_str = self.get_key_str(login, password)
         for key in database.keys():
             try:
-                if self.encoder.decode(key) == log_str:
+                if self.encoder.decode(key) == key_str:
                     return key
             except InvalidToken:
                 pass
@@ -153,6 +177,9 @@ class Vault:
     def save_vault(self):
         self.vault = self.encode_vault()
         data = {}
+
+        if not self.is_local_source:
+            raise err.ActionNotAllowedForRemote()
         try:
             with open(self.vault_db, 'r') as file:
                 data = json.load(file)
@@ -170,6 +197,8 @@ class Vault:
 
     def remove_vault(self):
         data = {}
+        if not self.is_local_source:
+            raise err.ActionNotAllowedForRemote()
         try:
             with open(self.vault_db, 'r') as file:
                 data = json.load(file)
@@ -188,15 +217,18 @@ class Vault:
         )
 
     def get_json_path(self):
-        return f"{VAULT_DB}-{str(time.time()).replace('.','')}.json"
+        name = str(time.time()).replace('.', '')
+        return (
+            f'{self.local_dir}/vault_decrypted-{name}.json'
+        )
 
-    def dump_data(self, name, verbose=True):
-        with open(name, 'w') as file:
+    def dump_data(self, path, verbose=True):
+        with open(path, 'w') as file:
             json.dump(self.decode_vault(), file)
         if verbose:
-            err.show_warning(f'Dump JSON: {name}')
+            err.show_warning(f'Dump JSON: {path}')
         else:
-            return name
+            return path
 
     def load_data(self, path):
         try:
@@ -209,17 +241,19 @@ class Vault:
             raise err.InvalidJSON(path)
         except AttributeError:
             raise err.InvalidDataFormat(path)
-        return path
 
     def erase_data(self):
         self.vault = {}
         self.save_vault()
 
-    def find_database(self, verbose=True):
+    def get_database_path(self):
+        return self.vault_db
+
+    def find_database(self, path, verbose=True):
         if verbose:
-            err.show_warning(f'Find DB: {self.vault_dir}')
+            err.show_warning(f'Find DB: {path}')
         else:
-            return self.vault_dir
+            return path
 
     def about(self, verbose=True):
         info = f'{VAULT_TITLE} v{VERSION} {LICENSE}'
@@ -245,6 +279,11 @@ def main():
         'login', nargs='?', metavar='login', type=str,
         help='user login'
     )
+    # select source
+    parser.add_argument(
+        '-src', '--source', dest='source', type=str, default=LOCAL,
+        help='load encrypted data from remote DB to local vault'
+    )
 
     # actions
     group = parser.add_mutually_exclusive_group()
@@ -252,11 +291,7 @@ def main():
         '-in', '--sign_in', action='store_true',
         help='use to sign in'
     )
-    # remote url
-    parser.add_argument(
-        '-u', '--url', dest='url', type=str,
-        help='load encrypted data from remote DB to local vault'
-    )
+
     group.add_argument(
         '-up', '--sign_up', action='store_true',
         help='use to sign up and create empty vault in local DB'
@@ -283,7 +318,7 @@ def main():
     # info actions
     group.add_argument(
         '-f', '--find', action='store_true',
-        help='find local DB dir'
+        help='find DB dir'
     )
     group.add_argument(
         '-a', '--about', action='store_true',
@@ -303,7 +338,7 @@ def main():
     ):
         parser.error('the following arguments are required: login')
 
-    vlt = Vault()
+    vlt = Vault(args.source)
 
     if args.sign_up:
         lpv = LoginPasswordValidator(args.login)
@@ -312,15 +347,18 @@ def main():
             vlt.set_user(lpv.login, lpv.password)
             tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
         except (
+            err.ActionNotAllowedForRemote,
             err.DataBaseNotFound,
+            err.FileNotFound,
             err.InvalidJSON,
             err.InvalidEmail,
             err.InvalidPassword,
+            err.InvalidURL,
             err.UserExists
         ) as e:
             err.show_error(e)
     elif args.find:
-        vlt.find_database()
+        vlt.find_database(vlt.get_database_path())
     elif args.version:
         vlt.version()
     elif args.about:
@@ -329,7 +367,7 @@ def main():
 
         lpv = LoginPasswordValidator(args.login)
         try:
-            vlt.get_user(lpv.login, lpv.password, args.url)
+            vlt.get_user(lpv.login, lpv.password)
 
             if args.remove:
                 vlt.remove_vault()
@@ -345,11 +383,12 @@ def main():
                 tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
 
         except (
-            err.InvalidURL,
+            err.ActionNotAllowedForRemote,
             err.DataBaseNotFound,
             err.FileNotFound,
             err.InvalidJSON,
             err.InvalidDataFormat,
+            err.InvalidURL,
             err.LoginFailed
         ) as e:
             err.show_error(e)

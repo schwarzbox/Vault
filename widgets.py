@@ -1,3 +1,5 @@
+# vault.py
+
 import os
 from typing import TypeVar
 
@@ -11,6 +13,7 @@ from rich.panel import Panel
 from rich.style import Style
 from rich.text import Text
 
+from textual import events
 from textual.scrollbar import ScrollBar, ScrollBarRender
 from textual.views import GridView
 from textual.widget import Widget
@@ -18,9 +21,9 @@ from textual.widgets import (
     Button, TreeControl, TreeNode
 )
 
-from mixins import ButtonMixin
+from mixins import ButtonMixin, InputTextMixin
 from settings import (
-    BRIGHT_GREEN, COPY, ERASE, GRAY, GREEN, KEY, YELLOW
+    BRIGHT_GREEN, COPY, DONE, GRAY, GREEN, KEY, YELLOW
 )
 
 NodeDataType = TypeVar('NodeDataType')
@@ -59,11 +62,13 @@ class CellButton(ButtonMixin, Button):
 
 
 class CopyButton(ButtonMixin, Button):
-    def __init__(self, *args, title, **kwargs):
+    def __init__(self, *args, title, sec=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.title = title
         self.on_click_label = COPY
         self.action = None
+        self.visible = False
+        self.sec = sec
 
     def hide(self):
         self.visible = False
@@ -74,33 +79,44 @@ class CopyButton(ButtonMixin, Button):
             loc = self.action()
             if loc:
                 pc.copy(loc)
-        self.set_timer(1, lambda: self.hide())
+        if self.sec:
+            self.set_timer(1, lambda: self.hide())
+        else:
+            self.hide()
 
 
-class EraseButton(ButtonMixin, Button):
-    def __init__(self, *args, title, **kwargs):
+class ActionButton(ButtonMixin, Button):
+    def __init__(self, *args, title, sec=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.title = title
-        self.on_click_label = ERASE
+        self.on_click_label = DONE
         self.action = None
+        self.visible = False
+        self.sec = sec
 
     def hide(self):
         self.visible = False
 
-    def on_click(self) -> None:
-        super().on_click()
+    def _hide_action(self):
         if self.action:
             self.action()
-        self.set_timer(1, lambda: self.hide())
+        self.hide()
+
+    def on_click(self) -> None:
+        super().on_click()
+        if self.sec:
+            self.set_timer(1, lambda: self._hide_action())
+        else:
+            self._hide_action()
 
 
 class Notification(Widget):
     def __init__(self, title: str, label: str):
         super().__init__(title)
-        self.visible = False
         self.title = title
         self.label = label
         self.border_color = GREEN
+        self.visible = False
 
     def render(self) -> Panel:
         return Panel(
@@ -196,3 +212,25 @@ class LoadTree(TreeControl):
                 }
             )
         return label
+
+
+class InputText(InputTextMixin):
+    def __init__(self, title):
+        super().__init__()
+        self.title = title
+        self.on_leave_label = 'Paste URL (ctrl+v)'
+        self.visible = False
+
+    def on_key(self, event: events.Key) -> None:
+        if self.mouse_over:
+            if str(event.key) == 'ctrl+h':
+                self.content = ''
+                self.refresh()
+
+            elif str(event.key) == 'ctrl+v':
+                self.content = ''
+                self.content += pc.paste()
+                self.refresh()
+
+    def hide(self):
+        self.visible = False

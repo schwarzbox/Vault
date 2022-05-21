@@ -1,6 +1,6 @@
 # vault
 
-v1.0
+v1.1
 
 Command line password manager.
 
@@ -14,10 +14,10 @@ You need python 3.9 to create executable and run <strong>vault</strong> password
 curl -L https://github.com/schwarzbox/Vault/archive/master.zip --output Vault.zip
 unzip Vault.zip
 cd Vault-master
-# create virtual environment to install shiv and appdirs
+# create virtual environment to install shiv
 python3 -m venv venv-shiv
 . venv-shiv/bin/activate
-pip3 install shiv appdirs
+pip3 install shiv
 # create vault executable in the current dir
 shiv -c vault -o vault --preamble preamble.py . --use-feature=in-tree-build
 deactivate
@@ -107,19 +107,29 @@ Vault never save your decrypted password. Still no way to restore it and decode 
 
 # Remote access
 
+<strong>Vault</strong> creates local database and --source flag by default set to 'local'. You can provide remote source.
+
 Upload encrypted database in GitHub or anywere else.
 
-Load vault from database in github repo.
+Load vault from database in github repo. It is safe if you upload encrypted data from your local database.
 
 ```bash
-vault av@myemail.com --url 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data'
+vault av@myemail.com -src 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data'
 ```
 
-Load vault from database in private github repo. You need to provide token.
+Load vault from database in private github repo. You need to provide token. But this token expired and you need to generate new link.
 
 ```bash
-vault av@myemail.com --url 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data?token=TOKEN'
+vault av@myemail.com -src 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data?token=TOKEN'
 ```
+
+You can create secret gist and load encrypted database.
+
+```bash
+vault av@myemail.com -src 'https://gist.githubusercontent.com/MYGIT/1234/raw/1234/vault_data'
+```
+
+You can switch to remote source at runtime using TUI.
 
 # Erase data in local vault
 
@@ -155,8 +165,8 @@ vault --version
 
 # Road Map
 
-v1.1
-- pipes?
 v1.2
+
 - TUI CRUD
-- Remove dependency from appdirs during install
+- pipes
+

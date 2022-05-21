@@ -1,18 +1,17 @@
 # vault.py
 
-from appdirs import user_data_dir
-
 # about
 AUTHOR = 'Alexander Veledzimovich'
 EMAIL = 'veledz@gmail.com'
 DESCRIPTION = 'Command line password manager'
 LICENSE = 'MIT'
-VERSION = 1.0
+VERSION = 1.1
 URL = 'https://github.com/schwarzbox/Vault'
-# vault
+
+# const
 VAULT_TITLE = 'Vault'
-VAULT_DIR = user_data_dir(f'{VAULT_TITLE}DB')
-VAULT_DB = f'{VAULT_DIR}/vault_data'
+VAULT_DB = 'vault_data'
+LOCAL = 'local'
 # regexp
 EMAIL_REGEXP = r"([-!#-'*+/-9=?A-Z^-~]+(\.[-!#-'*+/-9=?A-Z^-~]+)*|\"([]!#-[^-~ \t]|(\\[\t -~]))+\")@([-!#-'*+/-9=?A-Z^-~]+(\.[-!#-'*+/-9=?A-Z^-~]+)*|\[[\t -Z^-~]*])"
 PASSWORD_REGEXP = r"(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\_\-@$!%*#?&])[A-Za-z\d\_\-@$!#%*?&]{8,}$"
@@ -23,9 +22,10 @@ YELLOW = 'yellow'
 RED = 'red'
 GRAY = '#666666'
 # icons
+ABOUT = 'About'
 KEY = '🔑'
 COPY = '✏️'
-ERASE = '🔆'
+DONE = '🔆'
 CLOSE = '✕'
 # art
 TITLE_FONT = 'lockergnome'

@@ -1,4 +1,5 @@
 # vault.py
+
 import os
 
 from rich.console import Console
@@ -8,15 +9,16 @@ from textual.widgets import Footer, ScrollView, TreeClick
 
 import errors as err
 from widgets import (
+    ActionButton,
     CellGrid,
     CellButton,
     CopyButton,
-    EraseButton,
+    InputText,
     LoadTree,
     LoadScroll,
     Notification
 )
-from settings import CLOSE, GREEN, RED, URL, YELLOW
+from settings import ABOUT, CLOSE, LOCAL, RED, URL, YELLOW
 
 console = Console()
 
@@ -34,31 +36,34 @@ class ViewApp(App):
         )
 
         self.dump_json.visible = not self.dump_json.visible
+        self.input_remote.visible = False
+        self.input_button.visible = False
         self.load_json.visible = False
         self.erase_data.visible = False
         self.find_db.visible = False
         self.about_vault.visible = False
         self.cells.visible = True
-
         self.notification.visible = False
 
     def action_load_data(self):
         self.load_json.visible = not self.load_json.visible
+        self.input_remote.visible = False
+        self.input_button.visible = False
         self.dump_json.visible = False
         self.erase_data.visible = False
         self.find_db.visible = False
         self.about_vault.visible = False
         self.cells.visible = not self.load_json.visible
-
         self.notification.visible = False
 
     def _erase_data(self):
         try:
             self.vlt.erase_data()
-            self.cells.update_cells(
-                cells=self._create_cells()
-            )
-        except err.DataBaseNotFound as e:
+            self.cells.update_cells(cells=self._create_cells())
+        except (
+            err.ActionNotAllowedForRemote,
+            err.DataBaseNotFound
+        ) as e:
             title = 'Error'
             label = str(e)
             color = RED
@@ -69,38 +74,88 @@ class ViewApp(App):
         self.erase_data.action = self._erase_data
 
         self.erase_data.visible = not self.erase_data.visible
+        self.input_remote.visible = False
+        self.input_button.visible = False
         self.dump_json.visible = False
         self.load_json.visible = False
         self.find_db.visible = False
         self.about_vault.visible = False
         self.cells.visible = True
-
         self.notification.visible = False
 
     def action_find_database(self):
-        self.find_db.label = self.vlt.vault_dir
+        loc = self.vlt.get_database_path()
+        self.find_db.label = loc
         self.find_db.action = lambda: self.vlt.find_database(
-            verbose=False
+            loc, verbose=False
         )
 
         self.find_db.visible = not self.find_db.visible
+        self.input_remote.visible = False
+        self.input_button.visible = False
         self.dump_json.visible = False
         self.load_json.visible = False
         self.erase_data.visible = False
         self.about_vault.visible = False
         self.cells.visible = True
+        self.notification.visible = False
 
+    def _source_data(self):
+        login, password = (
+            self.vlt.encoder.decode(self.vlt.key).split(' ')
+        )
+        source = self.input_remote.content
+
+        try:
+            self.input_remote.content = ''
+            self.input_remote.hide()
+
+            self.vlt.source = source
+            self.vlt.set_remote_source()
+            self.vlt.get_user(login, password)
+
+        except (
+            err.DataBaseNotFound,
+            err.FileNotFound,
+            err.InvalidJSON,
+            err.InvalidDataFormat,
+            err.InvalidURL,
+            err.LoginFailed
+        ) as e:
+            self.vlt.source = LOCAL
+            self.vlt.set_local_source()
+            self.vlt.get_user(login, password)
+
+            title = 'Error'
+            label = str(e)
+            color = RED
+            self.notification.show(title, label, color)
+
+        self.cells.update_cells(cells=self._create_cells())
+
+    def action_source_data(self):
+        self.input_remote.visible = not self.input_remote.visible
+        self.input_button.visible = not self.input_button.visible
+        self.input_button.action = self._source_data
+
+        self.dump_json.visible = False
+        self.load_json.visible = False
+        self.erase_data.visible = False
+        self.find_db.visible = False
+        self.about_vault.visible = False
+        self.cells.visible = True
         self.notification.visible = False
 
     def action_about_vault(self):
         self.about_vault.action = lambda: URL
 
         self.about_vault.visible = not self.about_vault.visible
+        self.input_remote.visible = False
+        self.input_button.visible = False
         self.dump_json.visible = False
         self.load_json.visible = False
         self.find_db.visible = False
         self.cells.visible = True
-
         self.notification.visible = False
 
     async def handle_tree_click(
@@ -111,16 +166,12 @@ class ViewApp(App):
         directory = message.node.data.get('dir', None)
 
         if path:
-            title = 'Load'
             try:
-                loc = self.vlt.load_data(path)
-                self.cells.update_cells(
-                    cells=self._create_cells()
-                )
-                label = os.path.basename(loc)
                 self.action_load_data()
-                color = GREEN
+                self.vlt.load_data(path)
+                self.cells.update_cells(cells=self._create_cells())
             except (
+                err.ActionNotAllowedForRemote,
                 err.DataBaseNotFound,
                 err.FileNotFound,
                 err.InvalidJSON,
@@ -129,7 +180,7 @@ class ViewApp(App):
                 title = 'Error'
                 label = str(e)
                 color = RED
-            self.notification.show(title, label, color)
+                self.notification.show(title, label, color)
         elif directory:
             down = os.path.abspath(directory)
             os.chdir(down)
@@ -164,12 +215,13 @@ class ViewApp(App):
         return instances
 
     async def on_load(self) -> None:
-        await self.bind('ctrl+q', 'quit', CLOSE)
-        await self.bind('d', 'dump_data', 'Dump JSON')
-        await self.bind('l', 'load_data', 'Load JSON')
-        await self.bind('e', 'erase_data', 'Erase Data')
-        await self.bind('f', 'find_database', 'Find DB')
-        await self.bind('a', 'about_vault', 'About')
+        await self.bind('ctrl+c', 'quit', CLOSE)
+        await self.bind('d', 'dump_data', 'Dump')
+        await self.bind('l', 'load_data', 'Load')
+        await self.bind('e', 'erase_data', 'Erase')
+        await self.bind('f', 'find_database', 'Find')
+        await self.bind('s', 'source_data', 'Source')
+        await self.bind('a', 'about_vault', ABOUT)
 
     async def on_mount(self) -> None:
         await self.view.dock(Footer(), edge='bottom', z=2)
@@ -184,28 +236,25 @@ class ViewApp(App):
         self.dump_json = CopyButton(
             title='Dump', label=''
         )
-        self.dump_json.visible = False
 
         self.load_json = ScrollView()
         self.load_json.vscroll = LoadScroll(vertical=True)
         self.load_json.hscroll = LoadScroll(vertical=False)
         self.load_json.visible = False
 
-        self.erase_data = EraseButton(
-            title='Erase', label=''
-        )
-        self.erase_data.visible = False
+        self.erase_data = ActionButton(title='Erase', label='')
 
-        self.find_db = CopyButton(
-            title='Find', label=''
+        self.find_db = CopyButton(title='Find', label='')
+
+        self.input_remote = InputText(title='Source')
+        self.input_button = ActionButton(
+            title='', label='Remote'
         )
-        self.find_db.visible = False
 
         self.about_vault = CopyButton(
             title='About',
             label=self.vlt.about(verbose=False)
         )
-        self.about_vault.visible = False
 
         await self._create_tree(os.getcwd())
 
@@ -215,9 +264,12 @@ class ViewApp(App):
         await self.view.dock(self.erase_data, z=2)
         await self.view.dock(self.find_db, z=2)
         await self.view.dock(self.about_vault, z=2)
+        await self.view.dock(
+            self.input_remote, self.input_button, z=2
+        )
         await self.view.dock(self.cells, z=1)
 
-        if self.vlt.is_empty():
+        if self.vlt.is_empty:
             self.notification.show(
                 'Warning',
                 'Empty: Load JSON',
