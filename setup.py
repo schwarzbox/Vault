@@ -19,14 +19,14 @@ setup(
     author_email=EMAIL,
     license=LICENSE,
     py_modules=[
-        'vault', 'crypto', 'errors',
-        'tui', 'mixins', 'widgets',
-        'settings'
+        'vault', 'settings',
+        'crypto', 'errors', 'mixins', 'tui', 'validators', 'widgets'
     ],
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        'art', 'appdirs', 'cryptography', 'pyperclip', 'requests', 'textual'
+        'textual',
+        'art', 'appdirs', 'cryptography', 'pyperclip', 'requests',
     ],
     python_requires='>=3.9',
     entry_points={

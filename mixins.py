@@ -81,8 +81,6 @@ class InputTextMixin(Widget):
             title=self.title,
             title_align='left',
             height=self.height,
-            border_style=Style(
-                color=YELLOW if self.mouse_over else GREEN
-            ),
+            border_style=GREEN,
             box=HEAVY
         )

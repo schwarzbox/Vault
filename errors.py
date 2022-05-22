@@ -26,8 +26,8 @@ class ActionNotAllowedForRemote(VaultException):
     message = 'Action is not allowed for remote source'
 
 
-class DataBaseNotFound(VaultException):
-    def __init__(self, path, message='Data Base not found:'):
+class LocalDataBaseNotFound(VaultException):
+    def __init__(self, path, message='Database not found:'):
         self.message = f'{message} {path}'
         super().__init__(self.message)
 

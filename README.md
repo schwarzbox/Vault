@@ -1,6 +1,6 @@
 # vault
 
-v1.1
+v1.15
 
 Command line password manager.
 
@@ -114,19 +114,19 @@ Upload encrypted database in GitHub or anywere else.
 Load vault from database in github repo. It is safe if you upload encrypted data from your local database.
 
 ```bash
-vault av@myemail.com -src 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data'
+vault av@myemail.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data'
 ```
 
 Load vault from database in private github repo. You need to provide token. But this token expired and you need to generate new link.
 
 ```bash
-vault av@myemail.com -src 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data?token=TOKEN'
+vault av@myemail.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data?token=TOKEN'
 ```
 
 You can create secret gist and load encrypted database.
 
 ```bash
-vault av@myemail.com -src 'https://gist.githubusercontent.com/MYGIT/1234/raw/1234/vault_data'
+vault av@myemail.com --source 'https://gist.githubusercontent.com/MYGIT/1234/raw/1234/vault_data'
 ```
 
 You can switch to remote source at runtime using TUI.

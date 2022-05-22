@@ -4,8 +4,10 @@ import os
 
 from rich.console import Console
 
+from rich.console import RenderableType
 from textual.app import App
-from textual.widgets import Footer, ScrollView, TreeClick
+from textual.widgets import ScrollView, TreeClick
+from textual.reactive import Reactive
 
 import errors as err
 from widgets import (
@@ -13,6 +15,7 @@ from widgets import (
     CellGrid,
     CellButton,
     CopyButton,
+    HightlightFooter,
     InputText,
     LoadTree,
     LoadScroll,
@@ -24,9 +27,26 @@ console = Console()
 
 
 class ViewApp(App):
+    source_type: Reactive[RenderableType] = Reactive('')
+
     def __init__(self, *args, vlt, **kwargs):
         super().__init__(*args, **kwargs)
         self.vlt = vlt
+
+    def watch_source_type(self, value):
+        for binding in self.bindings.shown_keys:
+            if binding.key == 's':
+                binding.description = value
+
+    def _set_source_type(self):
+        if self.vlt.is_local_source:
+            self.source_type = 'Local Source'
+            self.footer.change_style = False
+        else:
+            self.source_type = 'Remote Source'
+            self.footer.change_style = True
+        self.footer._key_text = None
+        self.footer.refresh(layout=True)
 
     def _hide_pop_up_view(self, *exclude):
         for view in self.pop_up_views:
@@ -53,9 +73,10 @@ class ViewApp(App):
         try:
             self.vlt.erase_data()
             self.cells.update_cells(cells=self._create_cells())
+            self._show_warning_load_json()
         except (
             err.ActionNotAllowedForRemote,
-            err.DataBaseNotFound
+            err.LocalDataBaseNotFound
         ) as e:
             title = 'Error'
             label = str(e)
@@ -63,7 +84,11 @@ class ViewApp(App):
             self.notification.show(title, label, color)
 
     def action_erase_data(self):
-        self.erase_data.label = self.vlt.encoder.decode(self.vlt.key)
+        login, password = (
+            self.vlt.encoder.decode(self.vlt.key).split(' ')
+        )
+        label = f"{login} {'*' * len(password)}"
+        self.erase_data.label = label
         self.erase_data.action = self._erase_data
 
         self.erase_data.visible = not self.erase_data.visible
@@ -85,17 +110,19 @@ class ViewApp(App):
         login, password = (
             self.vlt.encoder.decode(self.vlt.key).split(' ')
         )
+        old_key = self.vlt.key
+        old_source = self.vlt.vault_db
         source = self.input_source.content
-
         try:
             self.input_source.content = ''
             self.input_source.hide()
 
             self.vlt.set_source(source)
             self.vlt.get_user(login, password)
-
+            self.cells.update_cells(cells=self._create_cells())
+            self._show_warning_load_json()
         except (
-            err.DataBaseNotFound,
+            err.LocalDataBaseNotFound,
             err.FileNotFound,
             err.InvalidJSON,
             err.InvalidDataFormat,
@@ -105,25 +132,40 @@ class ViewApp(App):
             title = 'Error'
             label = str(e)
             color = RED
-            try:
-                self.vlt.set_source()
-                self.vlt.get_user(login, password)
-            except err.LoginFailed:
-                self.vlt.vault = {}
-                self.vlt.set_user(login, password)
-            except err.DataBaseNotFound:
-                self.vlt.vault = {}
-                self.vlt.set_default_database()
-                self.vlt.set_user(login, password)
-            except (
-                err.InvalidJSON,
-                err.InvalidDataFormat
-            ) as e:
-                label = str(e)
 
             self.notification.show(title, label, color)
 
-        self.cells.update_cells(cells=self._create_cells())
+            try:
+                self.vlt.key = old_key
+                self.vlt.set_source(old_source)
+                self.vlt.get_user(login, password)
+                self.set_timer(
+                    2, self._show_warning_load_json
+                )
+            except err.LoginFailed:
+                self.vlt.key = old_key
+                self.vlt.set_source(old_source)
+                self.vlt.set_user(login, password)
+                self.set_timer(
+                    2, self._show_warning_load_json
+                )
+            except (
+                err.LocalDataBaseNotFound,
+                err.FileNotFound,
+                err.InvalidJSON,
+                err.InvalidDataFormat,
+                err.InvalidURL,
+                err.LoginFailed
+            ) as e:
+                label = str(e)
+
+                self.set_timer(
+                    2,
+                    lambda: self.notification.show(
+                        title, label, color
+                    )
+                )
+        self._set_source_type()
 
     def action_source_data(self):
         self.input_button.action = self._source_data
@@ -152,9 +194,10 @@ class ViewApp(App):
                 self.action_load_data()
                 self.vlt.load_data(path)
                 self.cells.update_cells(cells=self._create_cells())
+                self._show_warning_load_json()
             except (
                 err.ActionNotAllowedForRemote,
-                err.DataBaseNotFound,
+                err.LocalDataBaseNotFound,
                 err.FileNotFound,
                 err.InvalidJSON,
                 err.InvalidDataFormat
@@ -196,7 +239,14 @@ class ViewApp(App):
                 )
         return instances
 
+    def _show_warning_load_json(self):
+        if self.vlt.is_empty:
+            self.notification.show(
+                'Warning', 'Empty: Load JSON', YELLOW, 3
+            )
+
     async def on_load(self) -> None:
+
         await self.bind('ctrl+c', 'quit', CLOSE)
         await self.bind('d', 'dump_data', 'Dump')
         await self.bind('l', 'load_data', 'Load')
@@ -206,7 +256,9 @@ class ViewApp(App):
         await self.bind('a', 'about_vault', ABOUT)
 
     async def on_mount(self) -> None:
-        await self.view.dock(Footer(), edge='bottom', z=2)
+
+        self.footer = HightlightFooter()
+        await self.view.dock(self.footer, edge='bottom', z=2)
 
         self.cells = CellGrid(cells=self._create_cells())
         self.cells.visible = True
@@ -230,7 +282,7 @@ class ViewApp(App):
 
         self.input_source = InputText(title='Source')
         self.input_button = ActionButton(
-            title='', label='OK'
+            title='', label='Connect'
         )
 
         self.about_vault = CopyButton(
@@ -251,13 +303,8 @@ class ViewApp(App):
         )
         await self.view.dock(self.cells, z=1)
 
-        if self.vlt.is_empty:
-            self.notification.show(
-                'Warning',
-                'Empty: Load JSON',
-                YELLOW,
-                3
-            )
+        self._show_warning_load_json()
+        self._set_source_type()
 
         self.pop_up_views = [
             self.dump_json,

@@ -18,12 +18,12 @@ from textual.scrollbar import ScrollBar, ScrollBarRender
 from textual.views import GridView
 from textual.widget import Widget
 from textual.widgets import (
-    Button, TreeControl, TreeNode
+    Button, Footer, TreeControl, TreeNode
 )
 
 from mixins import ButtonMixin, InputTextMixin
 from settings import (
-    BRIGHT_GREEN, COPY, DONE, GRAY, GREEN, KEY, YELLOW
+    BRIGHT_GREEN, COPY, DONE, GRAY, GREEN, KEY, RED, WHITE, YELLOW
 )
 
 NodeDataType = TypeVar('NodeDataType')
@@ -218,7 +218,7 @@ class InputText(InputTextMixin):
     def __init__(self, title):
         super().__init__()
         self.title = title
-        self.on_leave_label = 'Paste URL (ctrl+v)'
+        self.on_leave_label = 'URL (ctrl+v)'
         self.visible = False
 
     def on_key(self, event: events.Key) -> None:
@@ -234,3 +234,39 @@ class InputText(InputTextMixin):
 
     def hide(self):
         self.visible = False
+
+
+class HightlightFooter(Footer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.change_style = False
+
+    def get_style(self, change_style=False):
+        return (
+            f'{WHITE} on {RED}'
+            if change_style else f'{WHITE} on dark_green'
+        )
+
+    def make_key_text(self) -> Text:
+        text = Text(
+            style=self.get_style(self.change_style),
+            no_wrap=True,
+            overflow='ellipsis',
+            justify='left',
+            end='',
+        )
+        for binding in self.app.bindings.shown_keys:
+            key_display = (
+                binding.key.upper()
+                if binding.key_display is None
+                else binding.key_display
+            )
+            hovered = self.highlight_key == binding.key
+            key_text = Text.assemble(
+                (f' {key_display} ', 'reverse' if hovered else 'default on default'),
+                f' {binding.description} ',
+                meta={'@click': f"app.press('{binding.key}')", 'key': binding.key},
+            )
+            text.append_text(key_text)
+        return text

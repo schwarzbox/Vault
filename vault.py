@@ -13,61 +13,37 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 # shiv -c vault -o vault --preamble preamble.py .
 
-# add --source instead off --url
-# add TUI for select remote source at runtime for same user
-# add and catch error DataBaseNotFound
-# add and catch Invalid URL
-# add and catch ActionNotAllowedForRemote
-# remove dependency from appdirs during install
-# refactoring
+import argparse
+import json
+import os
+import time
 
-# add new screenshots
-# release
-
-# pipes?
 
 from appdirs import user_data_dir
 
-import tui
+from art import tprint
+
+from cryptography.fernet import InvalidToken
+
+import requests
+
+import crypto
+import errors as err
 from settings import (
     AUTHOR,
     DESCRIPTION,
     EMAIL,
-    EMAIL_REGEXP,
     LICENSE,
-    PASSWORD_REGEXP,
     TITLE_FONT,
+    URL,
     VAULT_DB,
     VAULT_TITLE,
     VERSION,
-    URL
 )
-import errors as err
-import crypto
-import requests
-from cryptography.fernet import InvalidToken
-from art import tprint
-import time
-import re
-import os
-import json
-import getpass
-import argparse
-
+import tui
+import validators
 
 __version__ = VERSION
-
-
-class LoginPasswordValidator:
-    def __init__(self, login):
-        self.login = login
-        self.password = getpass.getpass('Password? ')
-
-    def is_valid(self):
-        if not re.fullmatch(EMAIL_REGEXP, self.login):
-            raise err.InvalidEmail()
-        if not re.fullmatch(PASSWORD_REGEXP, self.password):
-            raise err.InvalidPassword()
 
 
 class Vault:
@@ -76,7 +52,6 @@ class Vault:
 
         self.local_dir = user_data_dir(f'{VAULT_TITLE}DB')
         self.set_source()
-
         self.set_default_database()
 
         self.set_source(source)
@@ -143,7 +118,7 @@ class Vault:
                     raise err.FileNotFound(self.vault_db)
 
         except FileNotFoundError:
-            raise err.DataBaseNotFound(
+            raise err.LocalDataBaseNotFound(
                 os.path.basename(self.vault_db)
             )
         except (json.decoder.JSONDecodeError, UnicodeDecodeError):
@@ -200,7 +175,7 @@ class Vault:
                 data[self.key] = self.vault
                 json.dump(data, file)
         except FileNotFoundError:
-            raise err.DataBaseNotFound(
+            raise err.LocalDataBaseNotFound(
                 os.path.basename(self.vault_db)
             )
 
@@ -220,7 +195,7 @@ class Vault:
                 json.dump(data, file)
 
         except FileNotFoundError:
-            raise err.DataBaseNotFound(
+            raise err.LocalDataBaseNotFound(
                 os.path.basename(self.vault_db)
             )
 
@@ -259,6 +234,8 @@ class Vault:
         self.save_vault()
 
     def get_database_path(self):
+        if not os.path.exists(self.vault_db):
+            return 'Database not found'
         return self.vault_db
 
     def find_database(self, path, verbose=True):
@@ -293,8 +270,8 @@ def main():
     )
     # select source
     parser.add_argument(
-        '-src', '--source', dest='source', type=str,
-        help='load encrypted data from custom DB to local vault'
+        '-s', '--source', dest='source', type=str,
+        help='load encrypted data from source DB'
     )
 
     # actions
@@ -316,7 +293,7 @@ def main():
 
     group.add_argument(
         '-dp', '--dump', action='store_true',
-        help='dump decrypted data from local vault to JSON'
+        help='dump decrypted data from vault to JSON'
     )
     group.add_argument(
         '-ld', '--load', dest='path', type=str,
@@ -330,7 +307,7 @@ def main():
     # info actions
     group.add_argument(
         '-f', '--find', action='store_true',
-        help='find DB dir'
+        help='find DB'
     )
     group.add_argument(
         '-a', '--about', action='store_true',
@@ -353,14 +330,14 @@ def main():
     vlt = Vault(args.source)
 
     if args.sign_up:
-        lpv = LoginPasswordValidator(args.login)
+        lpv = validators.LoginPasswordValidator(args.login)
         try:
             lpv.is_valid()
             vlt.set_user(lpv.login, lpv.password)
             tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
         except (
             err.ActionNotAllowedForRemote,
-            err.DataBaseNotFound,
+            err.LocalDataBaseNotFound,
             err.FileNotFound,
             err.InvalidJSON,
             err.InvalidEmail,
@@ -377,7 +354,7 @@ def main():
         vlt.about()
     else:
 
-        lpv = LoginPasswordValidator(args.login)
+        lpv = validators.LoginPasswordValidator(args.login)
         try:
             vlt.get_user(lpv.login, lpv.password)
 
@@ -396,7 +373,7 @@ def main():
 
         except (
             err.ActionNotAllowedForRemote,
-            err.DataBaseNotFound,
+            err.LocalDataBaseNotFound,
             err.FileNotFound,
             err.InvalidJSON,
             err.InvalidDataFormat,
