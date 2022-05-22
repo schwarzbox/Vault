@@ -49,7 +49,6 @@ class ButtonMixin:
 
 
 class InputTextMixin(Widget):
-    clicked: Reactive[RenderableType] = Reactive(False)
     content: Reactive[RenderableType] = Reactive('')
     mouse_over: Reactive[RenderableType] = Reactive(False)
     height = None
@@ -62,19 +61,15 @@ class InputTextMixin(Widget):
 
     def render(self) -> RenderableType:
         if self.content or self.mouse_over:
-            renderable = Align.left(
-                Text(
-                    self.content,
-                ),
-                vertical='middle',
-            )
+            text = self.content
         else:
-            renderable = Align.center(
-                Text(
-                    self.on_leave_label,
-                ),
-                vertical='middle',
-            )
+            text = self.on_leave_label
+
+        renderable = Align.center(
+            Text(text),
+            style=GREEN,
+            vertical='middle',
+        )
 
         return Panel(
             renderable,

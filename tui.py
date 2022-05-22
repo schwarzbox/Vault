@@ -15,13 +15,15 @@ from widgets import (
     CellGrid,
     CellButton,
     CopyButton,
-    HightlightFooter,
+    HighlightFooter,
     InputText,
     LoadTree,
     LoadScroll,
     Notification
 )
-from settings import ABOUT, CLOSE, RED, URL, YELLOW
+from settings import (
+    ABOUT, CLOSE, GREEN, LOCAL, RED, REMOTE, URL, WHO, YELLOW
+)
 
 console = Console()
 
@@ -40,10 +42,10 @@ class ViewApp(App):
 
     def _set_source_type(self):
         if self.vlt.is_local_source:
-            self.source_type = 'Local Source'
+            self.source_type = f'Source {LOCAL}'
             self.footer.change_style = False
         else:
-            self.source_type = 'Remote Source'
+            self.source_type = f'Source {REMOTE}'
             self.footer.change_style = True
         self.footer._key_text = None
         self.footer.refresh(layout=True)
@@ -52,6 +54,13 @@ class ViewApp(App):
         for view in self.pop_up_views:
             if view not in exclude:
                 view.visible = False
+
+    def action_whoami(self):
+        self.notification.show(
+            'Whoami',
+            self.vlt.encoder.decode(self.vlt.key),
+            GREEN
+        )
 
     def action_dump_data(self):
         loc = self.vlt.get_json_path()
@@ -84,26 +93,10 @@ class ViewApp(App):
             self.notification.show(title, label, color)
 
     def action_erase_data(self):
-        login, password = (
-            self.vlt.encoder.decode(self.vlt.key).split(' ')
-        )
-        label = f"{login} {'*' * len(password)}"
-        self.erase_data.label = label
         self.erase_data.action = self._erase_data
 
         self.erase_data.visible = not self.erase_data.visible
         self._hide_pop_up_view(self.erase_data)
-        self.cells.visible = True
-
-    def action_find_database(self):
-        loc = self.vlt.get_database_path()
-        self.find_db.label = loc
-        self.find_db.action = lambda: self.vlt.find_database(
-            loc, verbose=False
-        )
-
-        self.find_db.visible = not self.find_db.visible
-        self._hide_pop_up_view(self.find_db)
         self.cells.visible = True
 
     def _source_data(self):
@@ -173,6 +166,17 @@ class ViewApp(App):
         self.input_source.visible = not self.input_source.visible
         self.input_button.visible = not self.input_button.visible
         self._hide_pop_up_view(self.input_button, self.input_source)
+        self.cells.visible = True
+
+    def action_find_database(self):
+        loc = self.vlt.get_database_path()
+        self.find_db.label = loc
+        self.find_db.action = lambda: self.vlt.find_database(
+            loc, verbose=False
+        )
+
+        self.find_db.visible = not self.find_db.visible
+        self._hide_pop_up_view(self.find_db)
         self.cells.visible = True
 
     def action_about_vault(self):
@@ -248,16 +252,17 @@ class ViewApp(App):
     async def on_load(self) -> None:
 
         await self.bind('ctrl+c', 'quit', CLOSE)
+        await self.bind('w', 'whoami', WHO)
         await self.bind('d', 'dump_data', 'Dump')
         await self.bind('l', 'load_data', 'Load')
         await self.bind('e', 'erase_data', 'Erase')
-        await self.bind('f', 'find_database', 'Find')
         await self.bind('s', 'source_data', 'Source')
+        await self.bind('f', 'find_database', 'Find')
         await self.bind('a', 'about_vault', ABOUT)
 
     async def on_mount(self) -> None:
 
-        self.footer = HightlightFooter()
+        self.footer = HighlightFooter()
         await self.view.dock(self.footer, edge='bottom', z=2)
 
         self.cells = CellGrid(cells=self._create_cells())
@@ -276,13 +281,13 @@ class ViewApp(App):
         self.load_json.hscroll = LoadScroll(vertical=False)
         self.load_json.visible = False
 
-        self.erase_data = ActionButton(title='Erase', label='')
+        self.erase_data = ActionButton(title='Erase', label='OK')
 
         self.find_db = CopyButton(title='Find', label='')
 
         self.input_source = InputText(title='Source')
         self.input_button = ActionButton(
-            title='', label='Connect'
+            title='', label='OK'
         )
 
         self.about_vault = CopyButton(

@@ -218,7 +218,7 @@ class InputText(InputTextMixin):
     def __init__(self, title):
         super().__init__()
         self.title = title
-        self.on_leave_label = 'URL (ctrl+v)'
+        self.on_leave_label = 'Database PATH (CTRL+V)'
         self.visible = False
 
     def on_key(self, event: events.Key) -> None:
@@ -236,7 +236,7 @@ class InputText(InputTextMixin):
         self.visible = False
 
 
-class HightlightFooter(Footer):
+class HighlightFooter(Footer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

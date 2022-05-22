@@ -99,8 +99,6 @@ Vault use SHA256 algorithm. Database is a simple JSON file.
 7. App tries to decode each <strong>user token</strong> in database and compare with provided login and password.
 8. User successfully sign in when provided login and password matches with decoded data from <strong>user token</strong>.
 
-Note: User can use same login with different passwords.
-
 # Restore password and decode data
 
 Vault never save your decrypted password. Still no way to restore it and decode ecrypted data without password.
@@ -130,6 +128,8 @@ vault av@myemail.com --source 'https://gist.githubusercontent.com/MYGIT/1234/raw
 ```
 
 You can switch to remote source at runtime using TUI.
+
+![Screenshot](screenshot/screenshot3.png)
 
 # Erase data in local vault
 

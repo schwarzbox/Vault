@@ -18,7 +18,6 @@ import json
 import os
 import time
 
-
 from appdirs import user_data_dir
 
 from art import tprint
@@ -234,7 +233,7 @@ class Vault:
         self.save_vault()
 
     def get_database_path(self):
-        if not os.path.exists(self.vault_db):
+        if self.is_local_source and not os.path.exists(self.vault_db):
             return 'Database not found'
         return self.vault_db
 
