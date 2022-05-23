@@ -13,6 +13,8 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 # shiv -c vault -o vault --preamble preamble.py .
 
+# use ctrl+q instead of ctrl+c in TUI
+
 import argparse
 import json
 import os
@@ -254,7 +256,7 @@ class Vault:
             return message
 
     def version(self):
-        err.show_warning(f'Version: {VERSION}')
+        err.show_info(f'Version: {VERSION}')
 
 
 def main():

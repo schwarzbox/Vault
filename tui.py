@@ -22,7 +22,7 @@ from widgets import (
     Notification
 )
 from settings import (
-    ABOUT, CLOSE, GREEN, LOCAL, RED, REMOTE, URL, WHO, YELLOW
+    ABOUT, CLOSE, GREEN, LOCAL, RED, REMOTE, URL, WHO
 )
 
 console = Console()
@@ -56,11 +56,15 @@ class ViewApp(App):
                 view.visible = False
 
     def action_whoami(self):
-        self.notification.show(
-            'Whoami',
-            self.vlt.encoder.decode(self.vlt.key),
-            GREEN
+        self.whoami.action = (
+            lambda: self.notification.show(
+                'Info', self.vlt.encoder.decode(self.vlt.key)
+            )
         )
+
+        self.whoami.visible = not self.whoami.visible
+        self._hide_pop_up_view(self.whoami)
+        self.cells.visible = True
 
     def action_dump_data(self):
         loc = self.vlt.get_json_path()
@@ -82,7 +86,7 @@ class ViewApp(App):
         try:
             self.vlt.erase_data()
             self.cells.update_cells(cells=self._create_cells())
-            self._show_warning_load_json()
+            self._show_info_load_json()
         except (
             err.ActionNotAllowedForRemote,
             err.LocalDataBaseNotFound
@@ -99,7 +103,7 @@ class ViewApp(App):
         self._hide_pop_up_view(self.erase_data)
         self.cells.visible = True
 
-    def _source_data(self):
+    def _source(self):
         login, password = (
             self.vlt.encoder.decode(self.vlt.key).split(' ')
         )
@@ -113,7 +117,7 @@ class ViewApp(App):
             self.vlt.set_source(source)
             self.vlt.get_user(login, password)
             self.cells.update_cells(cells=self._create_cells())
-            self._show_warning_load_json()
+            self._show_info_load_json()
         except (
             err.LocalDataBaseNotFound,
             err.FileNotFound,
@@ -133,14 +137,14 @@ class ViewApp(App):
                 self.vlt.set_source(old_source)
                 self.vlt.get_user(login, password)
                 self.set_timer(
-                    2, self._show_warning_load_json
+                    2, self._show_info_load_json
                 )
             except err.LoginFailed:
                 self.vlt.key = old_key
                 self.vlt.set_source(old_source)
                 self.vlt.set_user(login, password)
                 self.set_timer(
-                    2, self._show_warning_load_json
+                    2, self._show_info_load_json
                 )
             except (
                 err.LocalDataBaseNotFound,
@@ -160,8 +164,8 @@ class ViewApp(App):
                 )
         self._set_source_type()
 
-    def action_source_data(self):
-        self.input_button.action = self._source_data
+    def action_source(self):
+        self.input_button.action = self._source
 
         self.input_source.visible = not self.input_source.visible
         self.input_button.visible = not self.input_button.visible
@@ -198,7 +202,7 @@ class ViewApp(App):
                 self.action_load_data()
                 self.vlt.load_data(path)
                 self.cells.update_cells(cells=self._create_cells())
-                self._show_warning_load_json()
+                self._show_info_load_json()
             except (
                 err.ActionNotAllowedForRemote,
                 err.LocalDataBaseNotFound,
@@ -243,20 +247,20 @@ class ViewApp(App):
                 )
         return instances
 
-    def _show_warning_load_json(self):
+    def _show_info_load_json(self):
         if self.vlt.is_empty:
             self.notification.show(
-                'Warning', 'Empty: Load JSON', YELLOW, 3
+                'Info', 'Empty: Load JSON', GREEN, 3
             )
 
     async def on_load(self) -> None:
-
-        await self.bind('ctrl+c', 'quit', CLOSE)
+        await self.bind('ctrl+c', '', CLOSE, show=False)
+        await self.bind('ctrl+q', 'quit', CLOSE)
         await self.bind('w', 'whoami', WHO)
         await self.bind('d', 'dump_data', 'Dump')
         await self.bind('l', 'load_data', 'Load')
         await self.bind('e', 'erase_data', 'Erase')
-        await self.bind('s', 'source_data', 'Source')
+        await self.bind('s', 'source', 'Source')
         await self.bind('f', 'find_database', 'Find')
         await self.bind('a', 'about_vault', ABOUT)
 
@@ -270,6 +274,10 @@ class ViewApp(App):
 
         self.notification = Notification(
             title='', label=''
+        )
+
+        self.whoami = ActionButton(
+            title='Who', label='OK'
         )
 
         self.dump_json = CopyButton(
@@ -287,7 +295,7 @@ class ViewApp(App):
 
         self.input_source = InputText(title='Source')
         self.input_button = ActionButton(
-            title='', label='OK'
+            title='Connect', label='OK'
         )
 
         self.about_vault = CopyButton(
@@ -298,6 +306,7 @@ class ViewApp(App):
         await self._create_tree(os.getcwd())
 
         await self.view.dock(self.notification, z=2)
+        await self.view.dock(self.whoami, z=2)
         await self.view.dock(self.dump_json, z=2)
         await self.view.dock(self.load_json, z=2)
         await self.view.dock(self.erase_data, z=2)
@@ -308,10 +317,11 @@ class ViewApp(App):
         )
         await self.view.dock(self.cells, z=1)
 
-        self._show_warning_load_json()
+        self._show_info_load_json()
         self._set_source_type()
 
         self.pop_up_views = [
+            self.whoami,
             self.dump_json,
             self.input_source,
             self.input_button,

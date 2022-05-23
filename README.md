@@ -38,6 +38,8 @@ rm -rf venv-shiv
 ./vault av@myemail.com -up
 ```
 
+Note: User can use same login with different passwords.
+
 # Prepare JSON with your sensetive data
 
 See example below or use sample.json for testing password manager.
@@ -98,6 +100,7 @@ Vault use SHA256 algorithm. Database is a simple JSON file.
 6. When user sign-in app creates new safe key from provided login and password.
 7. App tries to decode each <strong>user token</strong> in database and compare with provided login and password.
 8. User successfully sign in when provided login and password matches with decoded data from <strong>user token</strong>.
+
 
 # Restore password and decode data
 

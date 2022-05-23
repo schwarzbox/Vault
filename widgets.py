@@ -23,7 +23,7 @@ from textual.widgets import (
 
 from mixins import ButtonMixin, InputTextMixin
 from settings import (
-    BRIGHT_GREEN, COPY, DONE, GRAY, GREEN, KEY, RED, WHITE, YELLOW
+    BLUE, BRIGHT_GREEN, COPY, DONE, GRAY, GREEN, KEY,  WHITE, YELLOW
 )
 
 NodeDataType = TypeVar('NodeDataType')
@@ -151,7 +151,7 @@ class LoadScroll(ScrollBar):
     def render(self) -> RenderableType:
         style = Style(
             bgcolor=Color.parse(GRAY),
-            color=Color.parse(YELLOW if self.grabbed else GREEN),
+            color=GREEN,
         )
         return ScrollBarRender(
             virtual_size=self.virtual_size,
@@ -244,7 +244,7 @@ class HighlightFooter(Footer):
 
     def get_style(self, change_style=False):
         return (
-            f'{WHITE} on {RED}'
+            f'{WHITE} on {BLUE}'
             if change_style else f'{WHITE} on dark_green'
         )
 
