@@ -14,6 +14,7 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py .
 
 # use ctrl+q instead of ctrl+c in TUI
+# add default sourceself.default_button.action = self._default_source
 
 import argparse
 import json
@@ -65,11 +66,14 @@ class Vault:
     def is_local_source(self):
         return not self.vault_db.startswith('http')
 
+    def get_default_source(self):
+        return f'{self.local_dir}/{VAULT_DB}'
+
     def set_source(self, source=None):
         if source is not None:
             self.vault_db = source
         else:
-            self.vault_db = f'{self.local_dir}/{VAULT_DB}'
+            self.vault_db = self.get_default_source()
 
     def set_default_database(self):
         if not os.path.isdir(self.local_dir):

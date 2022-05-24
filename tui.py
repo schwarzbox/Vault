@@ -113,6 +113,7 @@ class ViewApp(App):
         try:
             self.input_source.content = ''
             self.input_source.hide()
+            self.default_button.hide()
 
             self.vlt.set_source(source)
             self.vlt.get_user(login, password)
@@ -164,12 +165,21 @@ class ViewApp(App):
                 )
         self._set_source_type()
 
+    def _default_source(self):
+        self.input_source.content = self.vlt.get_default_source()
+        self.input_button.hide()
+        self._source()
+
     def action_source(self):
+        self.default_button.action = self._default_source
         self.input_button.action = self._source
 
         self.input_source.visible = not self.input_source.visible
+        self.default_button.visible = not self.default_button.visible
         self.input_button.visible = not self.input_button.visible
-        self._hide_pop_up_view(self.input_button, self.input_source)
+        self._hide_pop_up_view(
+            self.input_button, self.default_button, self.input_source
+        )
         self.cells.visible = True
 
     def action_find_database(self):
@@ -293,6 +303,9 @@ class ViewApp(App):
 
         self.find_db = CopyButton(title='Find', label='')
 
+        self.default_button = ActionButton(
+            title='Default', label=self.vlt.get_default_source(),
+        )
         self.input_source = InputText(title='Source')
         self.input_button = ActionButton(
             title='Connect', label='OK'
@@ -313,7 +326,10 @@ class ViewApp(App):
         await self.view.dock(self.find_db, z=2)
         await self.view.dock(self.about_vault, z=2)
         await self.view.dock(
-            self.input_source, self.input_button, z=2
+            self.default_button,
+            self.input_source,
+            self.input_button,
+            z=2
         )
         await self.view.dock(self.cells, z=1)
 
@@ -323,6 +339,7 @@ class ViewApp(App):
         self.pop_up_views = [
             self.whoami,
             self.dump_json,
+            self.default_button,
             self.input_source,
             self.input_button,
             self.load_json,
