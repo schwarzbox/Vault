@@ -14,7 +14,8 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py .
 
 # use ctrl+q instead of ctrl+c in TUI
-# add default sourceself.default_button.action = self._default_source
+# add default source
+# add install.sh
 
 import argparse
 import json
