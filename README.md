@@ -38,8 +38,13 @@ mv vault /usr/local/bin
 ## Use install.sh
 
 ``` bash
+curl -L 'https://github.com/schwarzbox/Vault/archive/master.zip' --output Vault.zip
+unzip Vault.zip
+cd Vault-master
+
 chmod 744 install.sh
-./install.sh
+# run in the same process
+source ./install.sh
 ```
 
 # First run

@@ -1,12 +1,8 @@
 #!/bin/bash
+# This file should be sourced at the top
 
 echo -e '\nInstall Vault\n'
 
-curl -L 'https://github.com/schwarzbox/Vault/archive/master.zip' --output Vault.zip
-unzip Vault.zip
-rm Vault.zip
-
-cd Vault-master
 # create virtual environment to install shiv
 python3 -m venv venv-shiv
 . venv-shiv/bin/activate
@@ -16,10 +12,20 @@ shiv -c vault -o vault --preamble preamble.py . --use-feature=in-tree-build
 deactivate
 
 # move vault
-mv vault /usr/local/bin
+read -p 'Move vault to /usr/local/bin? [y/N] ' move
+if [[ $move == "y" || $move == "Y" || $move == "yes" || $move == "Yes" ]];
+then
+    mv vault /usr/local/bin
+fi
 
-cd ../
-rm -rf Vault-master
+# remove source
+read -p 'Remove source? [y/N] ' rmv
+if [[ $rmv == "y" || $rmv == "Y" || $rmv == "yes" || $rmv == "Yes" ]];
+then
+    cd ../
+    rm -rf Vault-master
+    rm Vault.zip
+fi
 
 echo -e '\nInstalled'
 which vault
