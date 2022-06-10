@@ -400,7 +400,10 @@ def main():
             err.InvalidURL,
             err.LoginFailed
         ) as e:
-            err.show_error(e)
+            try:
+                err.show_error(e)
+            except BrokenPipeError:
+                pass
 
 
 if __name__ == '__main__':
