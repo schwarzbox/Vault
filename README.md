@@ -1,6 +1,6 @@
 # vault
 
-v1.15
+v1.17
 
 Command line password manager.
 
@@ -95,6 +95,12 @@ Load sample.json using command line or use TUI after sign in.
 vault av@myemail.com --load sample.json
 ```
 
+# Use CLI to get decrypted data
+
+```bash
+vault av@myemail.com -g aws login | head
+```
+
 # Encryption
 
 Vault use SHA256 algorithm. Database is a simple JSON file.
@@ -177,5 +183,3 @@ vault --version
 v1.2
 
 - TUI CRUD
-- pipes
-

@@ -16,6 +16,7 @@ VAULT
 # use ctrl+q instead of ctrl+c in TUI
 # add default source
 # add install.sh
+# add CLI -get
 
 import argparse
 import json
@@ -209,6 +210,11 @@ class Vault:
             f'Remove vault: {self.encoder.decode(self.key)}'
         )
 
+    def get_data(self, folder, value):
+        decoded = self.decode_vault()
+        folder = decoded.get(folder, {})
+        print(folder.get(value, ''))
+
     def get_json_path(self):
         name = str(time.time()).replace('.', '')
         return (
@@ -265,8 +271,6 @@ class Vault:
 
 
 def main():
-    tprint(f'\n{VAULT_TITLE.upper()}', font=TITLE_FONT)
-
     parser = argparse.ArgumentParser(description=VAULT_TITLE)
 
     # required
@@ -278,6 +282,11 @@ def main():
     parser.add_argument(
         '-s', '--source', dest='source', type=str,
         help='load encrypted data from source DB'
+    )
+    # get decrypted data
+    parser.add_argument(
+        '-g', '--get', nargs=2, dest='get', type=str,
+        help='get decrypted data from source DB'
     )
 
     # actions
@@ -326,6 +335,9 @@ def main():
 
     args = parser.parse_args()
 
+    if not args.get:
+        tprint(f'\n{VAULT_TITLE.upper()}', font=TITLE_FONT)
+
     if (
         not args.login and not (
             args.find or args.version or args.about
@@ -366,6 +378,8 @@ def main():
 
             if args.remove:
                 vlt.remove_vault()
+            elif args.get:
+                vlt.get_data(*args.get)
             elif args.dump:
                 vlt.dump_data(vlt.get_json_path())
             elif args.path:
