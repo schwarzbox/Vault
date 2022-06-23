@@ -22,7 +22,19 @@ from widgets import (
     Notification
 )
 from settings import (
-    ABOUT, CLOSE, GREEN, LOCAL, RED, REMOTE, URL, WHO
+    ABOUT,
+    CLOSE,
+    DUMP,
+    ERASE,
+    FIND,
+    GREEN,
+    LOAD,
+    LOCAL,
+    RED,
+    REMOTE,
+    SOURCE,
+    URL,
+    WHO
 )
 
 console = Console()
@@ -42,10 +54,10 @@ class ViewApp(App):
 
     def _set_source_type(self):
         if self.vlt.is_local_source:
-            self.source_type = f'Source {LOCAL}'
+            self.source_type = f'{SOURCE} {LOCAL}'
             self.footer.change_style = False
         else:
-            self.source_type = f'Source {REMOTE}'
+            self.source_type = f'{SOURCE} {REMOTE}'
             self.footer.change_style = True
         self.footer._key_text = None
         self.footer.refresh(layout=True)
@@ -167,15 +179,16 @@ class ViewApp(App):
 
     def _default_source(self):
         self.input_source.content = self.vlt.get_default_source()
-        self.input_button.hide()
-        self._source()
 
     def action_source(self):
         self.default_button.action = self._default_source
         self.input_button.action = self._source
 
-        self.input_source.visible = not self.input_source.visible
-        self.default_button.visible = not self.default_button.visible
+        self.input_source.content = ''
+        input_source_visible = self.input_source.visible
+        self.input_source.visible = not input_source_visible
+        # to hide them together after set default source
+        self.default_button.visible = not input_source_visible
         self.input_button.visible = not self.input_button.visible
         self._hide_pop_up_view(
             self.input_button, self.default_button, self.input_source
@@ -267,11 +280,11 @@ class ViewApp(App):
         await self.bind('ctrl+c', '', CLOSE, show=False)
         await self.bind('ctrl+q', 'quit', CLOSE)
         await self.bind('w', 'whoami', WHO)
-        await self.bind('d', 'dump_data', 'Dump')
-        await self.bind('l', 'load_data', 'Load')
-        await self.bind('e', 'erase_data', 'Erase')
-        await self.bind('s', 'source', 'Source')
-        await self.bind('f', 'find_database', 'Find')
+        await self.bind('d', 'dump_data', DUMP)
+        await self.bind('l', 'load_data', LOAD)
+        await self.bind('e', 'erase_data', ERASE)
+        await self.bind('s', 'source', SOURCE)
+        await self.bind('f', 'find_database', FIND )
         await self.bind('a', 'about_vault', ABOUT)
 
     async def on_mount(self) -> None:
@@ -304,7 +317,7 @@ class ViewApp(App):
         self.find_db = CopyButton(title='Find', label='')
 
         self.default_button = ActionButton(
-            title='Default', label=self.vlt.get_default_source(),
+            title='Default', label=self.vlt.get_default_source(), sec=0.1
         )
         self.input_source = InputText(title='Source')
         self.input_button = ActionButton(

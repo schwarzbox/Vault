@@ -23,7 +23,7 @@ from textual.widgets import (
 
 from mixins import ButtonMixin, InputTextMixin
 from settings import (
-    BLUE, BRIGHT_GREEN, COPY, DONE, GRAY, GREEN, KEY,  WHITE, YELLOW
+    BLUE, BRIGHT_GREEN, COPY, DONE, GRAY, GREEN, KEY, WHITE, YELLOW
 )
 
 NodeDataType = TypeVar('NodeDataType')
@@ -80,7 +80,7 @@ class CopyButton(ButtonMixin, Button):
             if loc:
                 pc.copy(loc)
         if self.sec:
-            self.set_timer(1, lambda: self.hide())
+            self.set_timer(self.sec, lambda: self.hide())
         else:
             self.hide()
 
@@ -105,7 +105,7 @@ class ActionButton(ButtonMixin, Button):
     def on_click(self) -> None:
         super().on_click()
         if self.sec:
-            self.set_timer(1, lambda: self._hide_action())
+            self.set_timer(self.sec, lambda: self._hide_action())
         else:
             self._hide_action()
 

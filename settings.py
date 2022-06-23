@@ -23,14 +23,20 @@ RED = '#FF004B'
 GRAY = '#666666'
 BLUE = '#3B00FF'
 # icons
+CLOSE = '✕'
 WHO = 'Who'
+DUMP = 'Dump'
+LOAD = 'Load'
+ERASE = 'Erase'
+SOURCE = 'Source'
+FIND = 'Find'
 REMOTE = '🌐'
 LOCAL = '🟢'
 ABOUT = 'About'
 KEY = '🔑'
 COPY = '✏️'
 DONE = '🔆'
-CLOSE = '✕'
+
 # art
 TITLE_FONT = 'lockergnome'
 # messages

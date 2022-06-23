@@ -24,7 +24,7 @@ class ButtonMixin:
                 self.on_click_label if self.clicked else self.label,
             ),
             vertical='middle',
-            style=YELLOW if self.clicked else GREEN
+            style=YELLOW if self.mouse_over else GREEN
         )
         return Panel(
             renderable,
