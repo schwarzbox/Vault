@@ -78,12 +78,19 @@ class ViewApp(App):
         self._hide_pop_up_view(self.whoami)
         self.cells.visible = True
 
+    def _dump_data(self, loc):
+        try:
+            self.vlt.dump_data(loc, verbose=False)
+        except err.ActionNotAllowedForRemote as e:
+            title = 'Error'
+            label = str(e)
+            color = RED
+            self.notification.show(title, label, color)
+
     def action_dump_data(self):
         loc = self.vlt.get_json_path()
         self.dump_json.label = os.path.basename(loc)
-        self.dump_json.action = lambda: self.vlt.dump_data(
-            loc, verbose=False
-        )
+        self.dump_json.action = lambda: self._dump_data(loc)
 
         self.dump_json.visible = not self.dump_json.visible
         self._hide_pop_up_view(self.dump_json)

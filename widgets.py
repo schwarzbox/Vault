@@ -185,8 +185,12 @@ class LoadTree(TreeControl):
         color = GRAY
         is_clickable = False
         if os.path.isdir(node.label):
-            color = BRIGHT_GREEN
-            is_clickable = True
+            try:
+                os.listdir(node.label)
+                color = BRIGHT_GREEN
+                is_clickable = True
+            except PermissionError:
+                pass
         elif os.path.splitext(node.label)[1] == '.json':
             color = YELLOW
             is_clickable = True

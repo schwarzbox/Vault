@@ -1,16 +1,16 @@
 {
-    "email": {
+    "💌 email": {
         "login": "av@myemail.com",
         "password": "1234"
     },
-    "aws": {
+    "☁️ aws": {
         "login": "av@myemail.com",
         "password": "5678"
     },
-    "database": {
+    "🧰 database": {
         "django-local": "DATABASE_NAME=MYDB\nDATABASE_USER=postgres\nDATABASE_PASSWORD=''\nDATABASE_HOST=127.0.0.1\nDATABASE_PORT=5432\nDATABASE_CONN_MAX_AGE=600"
     },
-    "personal": {
+    "🏠 personal": {
         "WIFI-HOME": "wifi-av"
     }
 }

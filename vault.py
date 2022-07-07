@@ -17,6 +17,8 @@ VAULT
 # add default source
 # add install.sh
 # add CLI -get
+# disable dump for remote source
+# fix PermissionError for folders
 
 import argparse
 import json
@@ -222,6 +224,9 @@ class Vault:
         )
 
     def dump_data(self, path, verbose=True):
+        if not self.is_local_source:
+            raise err.ActionNotAllowedForRemote()
+
         with open(path, 'w') as file:
             json.dump(self.decode_vault(), file)
         if verbose:

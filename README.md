@@ -1,6 +1,6 @@
 # vault
 
-v1.17
+v1.18
 
 Command line password manager.
 
@@ -66,24 +66,24 @@ vault av@myemail.com
 
 Note: User can use same login with different passwords.
 
-# Prepare JSON with your sensetive data
+# Prepare JSON with your sensetive data. Try to use emojis in titles.
 
 See example below or use sample.json to test password manager.
 
 ```JSON
 {
-    "email": {
+    "💌 email": {
         "login": "av@myemail.com",
         "password": "1234"
     },
-    "aws": {
+    "☁️ aws": {
         "login": "av@myemail.com",
         "password": "5678"
     },
-    "database": {
+    "🧰 database": {
         "django-local": "DATABASE_NAME=MYDB\nDATABASE_USER=postgres\nDATABASE_PASSWORD=''\nDATABASE_HOST=127.0.0.1\nDATABASE_PORT=5432\nDATABASE_CONN_MAX_AGE=600"
     },
-    "personal": {
+    "🏠 personal": {
         "WIFI-HOME": "wifi-av"
     }
 }
