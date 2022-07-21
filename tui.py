@@ -22,12 +22,12 @@ from widgets import (
     Notification
 )
 from settings import (
-    ABOUT,
     CLOSE,
     DUMP,
     ERASE,
     FIND,
     GREEN,
+    INFO,
     LOAD,
     LOCAL,
     RED,
@@ -213,11 +213,11 @@ class ViewApp(App):
         self._hide_pop_up_view(self.find_db)
         self.cells.visible = True
 
-    def action_about_vault(self):
-        self.about_vault.action = lambda: URL
+    def action_info_vault(self):
+        self.info_vault.action = lambda: URL
 
-        self.about_vault.visible = not self.about_vault.visible
-        self._hide_pop_up_view(self.about_vault)
+        self.info_vault.visible = not self.info_vault.visible
+        self._hide_pop_up_view(self.info_vault)
         self.cells.visible = True
 
     async def handle_tree_click(
@@ -291,8 +291,8 @@ class ViewApp(App):
         await self.bind('l', 'load_data', LOAD)
         await self.bind('e', 'erase_data', ERASE)
         await self.bind('s', 'source', SOURCE)
-        await self.bind('f', 'find_database', FIND )
-        await self.bind('a', 'about_vault', ABOUT)
+        await self.bind('f', 'find_database', FIND)
+        await self.bind('i', 'info_vault', INFO)
 
     async def on_mount(self) -> None:
 
@@ -307,11 +307,11 @@ class ViewApp(App):
         )
 
         self.whoami = ActionButton(
-            title='Who', label='OK'
+            title=WHO, label='OK'
         )
 
         self.dump_json = CopyButton(
-            title='Dump', label=''
+            title=DUMP, label=''
         )
 
         self.load_json = ScrollView()
@@ -319,21 +319,21 @@ class ViewApp(App):
         self.load_json.hscroll = LoadScroll(vertical=False)
         self.load_json.visible = False
 
-        self.erase_data = ActionButton(title='Erase', label='OK')
+        self.erase_data = ActionButton(title=ERASE, label='OK')
 
-        self.find_db = CopyButton(title='Find', label='')
+        self.find_db = CopyButton(title=FIND, label='')
 
         self.default_button = ActionButton(
             title='Default', label=self.vlt.get_default_source(), sec=0.1
         )
-        self.input_source = InputText(title='Source')
+        self.input_source = InputText(title=SOURCE)
         self.input_button = ActionButton(
             title='Connect', label='OK'
         )
 
-        self.about_vault = CopyButton(
-            title='About',
-            label=self.vlt.about(verbose=False)
+        self.info_vault = CopyButton(
+            title=INFO,
+            label=self.vlt.info(verbose=False)
         )
 
         await self._create_tree(os.getcwd())
@@ -344,7 +344,7 @@ class ViewApp(App):
         await self.view.dock(self.load_json, z=2)
         await self.view.dock(self.erase_data, z=2)
         await self.view.dock(self.find_db, z=2)
-        await self.view.dock(self.about_vault, z=2)
+        await self.view.dock(self.info_vault, z=2)
         await self.view.dock(
             self.default_button,
             self.input_source,
@@ -365,6 +365,6 @@ class ViewApp(App):
             self.load_json,
             self.erase_data,
             self.find_db,
-            self.about_vault,
+            self.info_vault,
             self.notification,
         ]

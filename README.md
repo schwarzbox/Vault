@@ -1,6 +1,6 @@
 # vault
 
-v1.18
+v1.19
 
 Command line password manager.
 
@@ -166,10 +166,10 @@ Iternally <strong>Vault</strong> use python package <strong>appdirs</strong> to 
 vault --find
 ```
 
-# About
+# Info
 
 ```bash
-vault --about
+vault --info
 ```
 
 # Version

@@ -16,7 +16,7 @@ VAULT
 # use ctrl+q instead of ctrl+c in TUI
 # add default source
 # add install.sh
-# add CLI -get
+# add CLI --get --add --update --clear
 # disable dump for remote source
 # fix PermissionError for folders
 
@@ -215,7 +215,75 @@ class Vault:
     def get_data(self, folder, value):
         decoded = self.decode_vault()
         folder = decoded.get(folder, {})
-        print(folder.get(value, ''))
+        print(folder.get(value, ''), end='')
+
+    def add_data(self, folder, key, value):
+        decoded = self.decode_vault()
+        if not decoded.get(folder, None):
+            decoded[folder] = {}
+
+        if not decoded[folder].get(key, None):
+            decoded[folder][key] = value
+            self.vault = decoded
+            self.save_vault()
+
+            err.show_info(f'Add: |{folder}| |{key} : {value}|')
+        else:
+            err.show_warning(f'Value "{key}" already exists')
+
+    def update_data(
+        self, folder, key, new_folder, new_key, new_value
+    ):
+        decoded = self.decode_vault()
+        if decoded.get(folder, None):
+            data = {**decoded[folder]}
+            del decoded[folder]
+            if decoded.get(new_folder, None):
+                err.show_warning(
+                    f'Value: "{new_folder}" already exists'
+                )
+                return
+            decoded[new_folder] = data
+        else:
+            err.show_warning(f'Value: "{folder}" not exists')
+            return
+
+        if decoded[new_folder].get(key, None):
+            data = decoded[new_folder][key]
+            del decoded[new_folder][key]
+            if decoded[new_folder].get(new_key, None):
+                err.show_warning(f'Value "{new_key}" already exists')
+                return
+            decoded[new_folder][new_key] = data
+        else:
+            err.show_warning(f'Value "{key}" not exists')
+            return
+
+        decoded[new_folder][new_key] = new_value
+        self.vault = decoded
+        self.save_vault()
+
+        err.show_info(
+            f'Update: |{new_folder}| |{new_key} : {new_value}|'
+        )
+
+    def clear_data(self, folder, key):
+        decoded = self.decode_vault()
+        if decoded.get(folder, None):
+            if decoded[folder].get(key, None):
+                value = decoded[folder][key]
+                del decoded[folder][key]
+                if len(decoded[folder]) == 0:
+                    del decoded[folder]
+
+                self.vault = decoded
+                self.save_vault()
+
+                err.show_info(f'Clear: |{folder}| |{key} : {value}|')
+            else:
+                err.show_warning(f'Value "{key}" not exists')
+        else:
+            err.show_warning(f'Value: "{folder}" not exists')
 
     def get_json_path(self):
         name = str(time.time()).replace('.', '')
@@ -261,7 +329,7 @@ class Vault:
         else:
             return path
 
-    def about(self, verbose=True):
+    def info(self, verbose=True):
         info = f'{VAULT_TITLE} v{VERSION} {LICENSE}'
         desc = f'{DESCRIPTION}\n{URL}'
         author = f'{AUTHOR}\n{EMAIL}'
@@ -293,6 +361,21 @@ def main():
         '-g', '--get', nargs=2, dest='get', type=str,
         help='get decrypted data from source DB'
     )
+    # add decrypted data
+    parser.add_argument(
+        '-a', '--add', nargs=3, dest='add', type=str,
+        help='add decrypted data to local DB'
+    )
+    # update decrypted data
+    parser.add_argument(
+        '-u', '--update', nargs=5, dest='update', type=str,
+        help='update decrypted data in local DB'
+    )
+    # clear decrypted data
+    parser.add_argument(
+        '-c', '--clear', nargs=2, dest='clear', type=str,
+        help='clear decrypted data in local DB'
+    )
 
     # actions
     group = parser.add_mutually_exclusive_group()
@@ -321,7 +404,7 @@ def main():
     )
     group.add_argument(
         '-er', '--erase', action='store_true',
-        help='erase data in local vault'
+        help='erase all data in local vault'
     )
 
     # info actions
@@ -330,8 +413,8 @@ def main():
         help='find DB'
     )
     group.add_argument(
-        '-a', '--about', action='store_true',
-        help='show about'
+        '-i', '--info', action='store_true',
+        help='show info'
     )
     group.add_argument(
         '-v', '--version', action='store_true',
@@ -344,8 +427,9 @@ def main():
         tprint(f'\n{VAULT_TITLE.upper()}', font=TITLE_FONT)
 
     if (
-        not args.login and not (
-            args.find or args.version or args.about
+        not args.login
+        and not (
+            args.find or args.version or args.info
         )
     ):
         parser.error('the following arguments are required: login')
@@ -373,8 +457,8 @@ def main():
         vlt.find_database(vlt.get_database_path())
     elif args.version:
         vlt.version()
-    elif args.about:
-        vlt.about()
+    elif args.info:
+        vlt.info()
     else:
 
         lpv = validators.LoginPasswordValidator(args.login)
@@ -385,6 +469,12 @@ def main():
                 vlt.remove_vault()
             elif args.get:
                 vlt.get_data(*args.get)
+            elif args.add:
+                vlt.add_data(*args.add)
+            elif args.update:
+                vlt.update_data(*args.update)
+            elif args.clear:
+                vlt.clear_data(*args.clear)
             elif args.dump:
                 vlt.dump_data(vlt.get_json_path())
             elif args.path:
@@ -412,7 +502,7 @@ def main():
 
 
 if __name__ == '__main__':
-    print(__version__)
-    print(__doc__)
-    print(__file__)
+    # print(__version__)
+    # print(__doc__)
+    # print(__file__)
     main()
