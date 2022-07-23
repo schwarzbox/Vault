@@ -80,7 +80,7 @@ class ViewApp(App):
 
     def _dump_data(self, loc):
         try:
-            self.vlt.dump_data(loc, verbose=False)
+            return self.vlt.dump_data(loc, verbose=False)
         except err.ActionNotAllowedForRemote as e:
             title = 'Error'
             label = str(e)

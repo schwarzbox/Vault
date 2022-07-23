@@ -13,14 +13,6 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 # shiv -c vault -o vault --preamble preamble.py .
 
-# use ctrl+q instead of ctrl+c in TUI
-# add default source
-# add install.sh
-# add CLI --get --add --update --clear
-# disable dump for remote source
-# fix PermissionError for groups
-# rename --about to --info
-
 import argparse
 import json
 import os
@@ -228,9 +220,9 @@ class Vault:
         with open(path, 'w') as file:
             json.dump(self.decode_vault(), file)
         if verbose:
-            err.show_warning(f'Dump JSON: {path}')
+            err.show_warning(f'Dump JSON: "{path}"')
         else:
-            return path
+            return f'"{path}"'
 
     def load_data(self, path):
         try:
@@ -251,9 +243,9 @@ class Vault:
 
     def find_database(self, path, verbose=True):
         if verbose:
-            err.show_warning(f'Find DB: {path}')
+            err.show_warning(f'Find DB: "{path}"')
         else:
-            return path
+            return f'"{path}"'
 
     def info(self, verbose=True):
         info = f'{VAULT_TITLE} v{VERSION} {LICENSE}'
