@@ -18,11 +18,13 @@ VAULT
 # add install.sh
 # add CLI --get --add --update --clear
 # disable dump for remote source
-# fix PermissionError for folders
+# fix PermissionError for groups
+# rename --about to --info
 
 import argparse
 import json
 import os
+import sys
 import time
 
 from appdirs import user_data_dir
@@ -43,17 +45,16 @@ from settings import (
     TITLE_FONT,
     URL,
     VAULT_DB,
+    VAULT_GROUP,
     VAULT_TITLE,
     VERSION,
 )
 import tui
 import validators
 
-__version__ = VERSION
-
 
 class Vault:
-    def __init__(self, source=None):
+    def __init__(self, source=None, is_piped=False):
         self.vault = {}
 
         self.local_dir = user_data_dir(f'{VAULT_TITLE}DB')
@@ -61,6 +62,8 @@ class Vault:
         self.set_default_database()
 
         self.set_source(source)
+
+        self.is_piped = is_piped
 
     @property
     def is_empty(self):
@@ -150,24 +153,24 @@ class Vault:
 
     def encode_vault(self):
         crt_vault = {}
-        for folder in self.vault:
-            crt_folder = self.encoder.encode(folder)
-            crt_vault[crt_folder] = {}
-            for key in self.vault[folder]:
+        for group in self.vault:
+            crt_group = self.encoder.encode(group)
+            crt_vault[crt_group] = {}
+            for key in self.vault[group]:
                 crt_key = self.encoder.encode(key)
-                crt_val = self.encoder.encode(self.vault[folder][key])
-                crt_vault[crt_folder][crt_key] = crt_val
+                crt_val = self.encoder.encode(self.vault[group][key])
+                crt_vault[crt_group][crt_key] = crt_val
         return crt_vault
 
     def decode_vault(self):
         cln_vault = {}
-        for folder in self.vault:
-            cln_folder = self.encoder.decode(folder)
-            cln_vault[cln_folder] = {}
-            for key in self.vault[folder]:
+        for group in self.vault:
+            cln_group = self.encoder.decode(group)
+            cln_vault[cln_group] = {}
+            for key in self.vault[group]:
                 cln_key = self.encoder.decode(key)
-                cln_val = self.encoder.decode(self.vault[folder][key])
-                cln_vault[cln_folder][cln_key] = cln_val
+                cln_val = self.encoder.decode(self.vault[group][key])
+                cln_vault[cln_group][cln_key] = cln_val
         return cln_vault
 
     def save_vault(self):
@@ -212,79 +215,6 @@ class Vault:
             f'Remove vault: {self.encoder.decode(self.key)}'
         )
 
-    def get_data(self, folder, value):
-        decoded = self.decode_vault()
-        folder = decoded.get(folder, {})
-        print(folder.get(value, ''), end='')
-
-    def add_data(self, folder, key, value):
-        decoded = self.decode_vault()
-        if not decoded.get(folder, None):
-            decoded[folder] = {}
-
-        if not decoded[folder].get(key, None):
-            decoded[folder][key] = value
-            self.vault = decoded
-            self.save_vault()
-
-            err.show_info(f'Add: |{folder}| |{key} : {value}|')
-        else:
-            err.show_warning(f'Value "{key}" already exists')
-
-    def update_data(
-        self, folder, key, new_folder, new_key, new_value
-    ):
-        decoded = self.decode_vault()
-        if decoded.get(folder, None):
-            data = {**decoded[folder]}
-            del decoded[folder]
-            if decoded.get(new_folder, None):
-                err.show_warning(
-                    f'Value: "{new_folder}" already exists'
-                )
-                return
-            decoded[new_folder] = data
-        else:
-            err.show_warning(f'Value: "{folder}" not exists')
-            return
-
-        if decoded[new_folder].get(key, None):
-            data = decoded[new_folder][key]
-            del decoded[new_folder][key]
-            if decoded[new_folder].get(new_key, None):
-                err.show_warning(f'Value "{new_key}" already exists')
-                return
-            decoded[new_folder][new_key] = data
-        else:
-            err.show_warning(f'Value "{key}" not exists')
-            return
-
-        decoded[new_folder][new_key] = new_value
-        self.vault = decoded
-        self.save_vault()
-
-        err.show_info(
-            f'Update: |{new_folder}| |{new_key} : {new_value}|'
-        )
-
-    def clear_data(self, folder, key):
-        decoded = self.decode_vault()
-        if decoded.get(folder, None):
-            if decoded[folder].get(key, None):
-                value = decoded[folder][key]
-                del decoded[folder][key]
-                if len(decoded[folder]) == 0:
-                    del decoded[folder]
-
-                self.vault = decoded
-                self.save_vault()
-
-                err.show_info(f'Clear: |{folder}| |{key} : {value}|')
-            else:
-                err.show_warning(f'Value "{key}" not exists')
-        else:
-            err.show_warning(f'Value: "{folder}" not exists')
-
     def get_json_path(self):
         name = str(time.time()).replace('.', '')
         return (
@@ -314,10 +244,6 @@ class Vault:
         except AttributeError:
             raise err.InvalidDataFormat(path)
 
-    def erase_data(self):
-        self.vault = {}
-        self.save_vault()
-
     def get_database_path(self):
         if self.is_local_source and not os.path.exists(self.vault_db):
             return 'Database not found'
@@ -342,89 +268,168 @@ class Vault:
     def version(self):
         err.show_info(f'Version: {VERSION}')
 
+    def get_data(self, group, value):
+        decoded = self.decode_vault()
+        group = decoded.get(group, {})
+
+        end = '\n'
+        if self.is_piped:
+            end = ''
+
+        err.show_info(group.get(value, ''), end=end)
+
+    def add_data(self, group, key, value):
+        decoded = self.decode_vault()
+
+        decoded[group] = decoded.get(group, {})
+
+        if not decoded[group].get(key, None):
+            decoded[group][key] = value
+            self.vault = decoded
+            self.save_vault()
+        else:
+            raise err.ValueAlreadyExists(key)
+
+    def update_data(
+        self,
+        group,
+        new_group=VAULT_GROUP,
+        key=None,
+        new_key=None,
+        new_value=None
+    ):
+        decoded = self.decode_vault()
+        if decoded.get(group, None):
+            data = {**decoded[group]}
+            del decoded[group]
+            if decoded.get(new_group, None):
+                raise err.ValueAlreadyExists(new_group)
+
+            decoded[new_group] = data
+        else:
+            raise err.ValueNotExists(group)
+
+        if key and new_key:
+            if decoded[new_group].get(key, None):
+                data = decoded[new_group][key]
+                del decoded[new_group][key]
+                if decoded[new_group].get(new_key, None):
+                    raise err.ValueAlreadyExists(new_key)
+
+                decoded[new_group][new_key] = data
+            else:
+                raise err.ValueNotExists(key)
+
+        if new_value:
+            decoded[new_group][new_key] = new_value
+
+        self.vault = decoded
+        self.save_vault()
+
+    def clear_data(self, group, key):
+        decoded = self.decode_vault()
+        if decoded.get(group, None):
+            if decoded[group].get(key, None):
+                del decoded[group][key]
+                if len(decoded[group]) == 0:
+                    del decoded[group]
+
+                self.vault = decoded
+                self.save_vault()
+            else:
+                raise err.ValueNotExists(key)
+        else:
+            raise err.ValueNotExists(group)
+
+    def erase_data(self):
+        self.vault = {}
+        self.save_vault()
+
 
 def main():
-    parser = argparse.ArgumentParser(description=VAULT_TITLE)
+    is_piped = True
+    if sys.stdout.isatty():
+        is_piped = False
+        tprint(f'\n{VAULT_TITLE.upper()}', font=TITLE_FONT)
+
+    parser = argparse.ArgumentParser(
+        description=DESCRIPTION
+    )
 
     # required
     parser.add_argument(
         'login', nargs='?', metavar='login', type=str,
         help='user login'
     )
-    # select source
-    parser.add_argument(
-        '-s', '--source', dest='source', type=str,
-        help='load encrypted data from source DB'
-    )
-    # get decrypted data
-    parser.add_argument(
-        '-g', '--get', nargs=2, dest='get', type=str,
-        help='get decrypted data from source DB'
-    )
-    # add decrypted data
-    parser.add_argument(
-        '-a', '--add', nargs=3, dest='add', type=str,
-        help='add decrypted data to local DB'
-    )
-    # update decrypted data
-    parser.add_argument(
-        '-u', '--update', nargs=5, dest='update', type=str,
-        help='update decrypted data in local DB'
-    )
-    # clear decrypted data
-    parser.add_argument(
-        '-c', '--clear', nargs=2, dest='clear', type=str,
-        help='clear decrypted data in local DB'
-    )
 
     # actions
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument(
+    main_group = parser.add_mutually_exclusive_group()
+    main_group.add_argument(
         '-in', '--sign_in', action='store_true',
         help='use to sign in'
     )
-
-    group.add_argument(
+    main_group.add_argument(
         '-up', '--sign_up', action='store_true',
-        help='use to sign up and create empty vault in local DB'
+        help='use to sign up and create an empty vault in the local DB'
     )
-
-    group.add_argument(
-        '-rm', '--remove', action='store_true',
-        help='remove vault from local DB'
-    )
-
-    group.add_argument(
+    main_group.add_argument(
         '-dp', '--dump', action='store_true',
-        help='dump decrypted data from vault to JSON'
+        help='dump decrypted data from the source vault to JSON'
     )
-    group.add_argument(
+    main_group.add_argument(
         '-ld', '--load', dest='path', type=str,
-        help='load decrypted data from JSON to local vault'
+        help='load decrypted data from JSON to the local vault'
     )
-    group.add_argument(
-        '-er', '--erase', action='store_true',
-        help='erase all data in local vault'
+    main_group.add_argument(
+        '-rm', '--remove', action='store_true',
+        help='remove vault from the local DB'
     )
 
     # info actions
-    group.add_argument(
+    main_group.add_argument(
         '-f', '--find', action='store_true',
         help='find DB'
     )
-    group.add_argument(
+    main_group.add_argument(
         '-i', '--info', action='store_true',
         help='show info'
     )
-    group.add_argument(
+    main_group.add_argument(
         '-v', '--version', action='store_true',
         help='show version'
     )
 
-    args = parser.parse_args()
+    # select source
+    parser.add_argument(
+        '-s', '--source', dest='source', type=str,
+        help='load encrypted vault from the source DB'
+    )
+    parser.add_argument(
+        '-g', '--get', nargs=2, dest='get', type=str,
+        metavar=('GROUP', 'KEY'),
+        help='get data from the source vault'
+    )
+    main_group.add_argument(
+        '-a', '--add', nargs=3, dest='add', type=str,
+        metavar=('GROUP', 'KEY', 'VALUE'),
+        help='add data to the local vault'
+    )
+    main_group.add_argument(
+        '-u', '--update', nargs='+', dest='update', type=str,
+        metavar=('GROUP', 'NEW_GROUP',),
+        help='update data in the local vault'
+    )
+    main_group.add_argument(
+        '-c', '--clear', nargs=2, dest='clear', type=str,
+        metavar=('GROUP', 'KEY'),
+        help='clear data in the local vault'
+    )
+    main_group.add_argument(
+        '-e', '--erase', action='store_true',
+        help='erase all data in the local vault'
+    )
 
-    if not args.get:
-        tprint(f'\n{VAULT_TITLE.upper()}', font=TITLE_FONT)
+    args = parser.parse_args()
 
     if (
         not args.login
@@ -434,7 +439,7 @@ def main():
     ):
         parser.error('the following arguments are required: login')
 
-    vlt = Vault(args.source)
+    vlt = Vault(args.source, is_piped)
 
     if args.sign_up:
         lpv = validators.LoginPasswordValidator(args.login)
@@ -465,20 +470,23 @@ def main():
         try:
             vlt.get_user(lpv.login, lpv.password)
 
-            if args.remove:
+            if args.dump:
+                vlt.dump_data(vlt.get_json_path())
+            elif args.path:
+                vlt.load_data(args.path)
+                tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
+            elif args.remove:
                 vlt.remove_vault()
             elif args.get:
                 vlt.get_data(*args.get)
             elif args.add:
                 vlt.add_data(*args.add)
+                tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
             elif args.update:
                 vlt.update_data(*args.update)
+                tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
             elif args.clear:
                 vlt.clear_data(*args.clear)
-            elif args.dump:
-                vlt.dump_data(vlt.get_json_path())
-            elif args.path:
-                vlt.load_data(args.path)
                 tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)
             elif args.erase:
                 vlt.erase_data()
@@ -493,7 +501,9 @@ def main():
             err.InvalidJSON,
             err.InvalidDataFormat,
             err.InvalidURL,
-            err.LoginFailed
+            err.LoginFailed,
+            err.ValueNotExists,
+            err.ValueAlreadyExists
         ) as e:
             try:
                 err.show_error(e)
@@ -502,7 +512,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # print(__version__)
-    # print(__doc__)
-    # print(__file__)
     main()

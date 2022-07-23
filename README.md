@@ -10,7 +10,7 @@ Command line password manager.
 
 You need python 3.9 to create executable and run <strong>vault</strong> password manager.
 
-## Manuall installation
+## Manual installation
 
 ```bash
 curl -L https://github.com/schwarzbox/Vault/archive/master.zip --output Vault.zip
@@ -35,7 +35,7 @@ You can move <strong>vault</strong> to /usr/local/bin for Mac and Linux OS.
 mv vault /usr/local/bin
 ```
 
-## Use install.sh
+## Use install.sh (bash only)
 
 ``` bash
 curl -L 'https://github.com/schwarzbox/Vault/archive/master.zip' --output Vault.zip
@@ -64,11 +64,11 @@ vault av@myemail.com -in
 vault av@myemail.com
 ```
 
-Note: User can use same login with different passwords.
+Note: User can use same login with different password to create different vault.
 
 # Prepare JSON with your sensetive data. Try to use emojis in titles.
 
-See example below or use sample.json to test password manager.
+Use example below or use sample.json to test password manager.
 
 ```JSON
 {
@@ -95,64 +95,13 @@ Load sample.json using command line or use TUI after sign in.
 vault av@myemail.com --load sample.json
 ```
 
-# Use CLI to get decrypted data
+# Dump decrypted data from the source vault to JSON
 
 ```bash
-vault av@myemail.com -g aws login | head
+vault av@myemail.com --dump
 ```
 
-# Encryption
-
-Vault use SHA256 algorithm. Database is a simple JSON file.
-
-1. When user sign-up app creates <strong>safe key</strong> using login and password.
-2. App combine login and password in one <strong>credential string</strong>.
-3. App uses <strong>safe key</strong> to encode <strong>credential string</strong> and get <strong>user token</strong>.
-4. <strong>User token</strong> uses as unique key for the user vault.
-5. All data in the user vault encrypted using <strong>safe key</strong>.
-6. When user sign-in app creates new safe key from provided login and password.
-7. App tries to decode each <strong>user token</strong> in database and compare with provided login and password.
-8. User successfully sign in when provided login and password matches with decoded data from <strong>user token</strong>.
-
-# Restore password and decode data
-
-Vault never save your decrypted password. Still no way to restore it and decode ecrypted data without password.
-
-# Remote access
-
-<strong>Vault</strong> creates default database and --source flag by set to None. You can provide temporary remote or local source for current session.
-
-Upload encrypted database in GitHub or anywere else.
-
-Load vault from database in github repo. It is safe if you upload encrypted data from your local database.
-
-```bash
-vault av@myemail.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data'
-```
-
-Load vault from database in private github repo. You need to provide token. But this token expired and you need to generate new link.
-
-```bash
-vault av@myemail.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data?token=TOKEN'
-```
-
-You can create secret gist and load encrypted database.
-
-```bash
-vault av@myemail.com --source 'https://gist.githubusercontent.com/MYGIT/1234/raw/1234/vault_data'
-```
-
-You can switch to remote source at runtime using TUI.
-
-![Screenshot](screenshot/screenshot3.png)
-
-# Erase data in local vault
-
-```bash
-vault av@myemail.com -er
-```
-
-# Remove vault from local database
+# Remove vault from the local database
 
 ```bash
 vault av@myemail.com -rm
@@ -176,6 +125,106 @@ vault --info
 
 ```bash
 vault --version
+```
+
+# Encryption
+
+Vault use SHA256 algorithm. Database is a simple JSON file.
+
+1. When user sign-up app creates <strong>safe key</strong> using login and password.
+2. App combine login and password in one <strong>credential string</strong>.
+3. App uses <strong>safe key</strong> to encode <strong>credential string</strong> and get <strong>user token</strong>.
+4. <strong>User token</strong> uses as unique key for the user vault.
+5. All data in the user vault encrypted using <strong>safe key</strong>.
+6. When user sign-in app creates new safe key from provided login and password.
+7. App tries to decode each <strong>user token</strong> in database and compare with provided login and password.
+8. User successfully sign in when provided login and password matches with decoded data from <strong>user token</strong>.
+
+# Restore password and decode data
+
+Vault never save your decrypted password. Still no way to restore it and decode ecrypted data without password.
+
+# Remote access
+
+<strong>Vault</strong> creates default database and --source flag set to None. You can provide temporary remote or local source for current session.
+
+Upload encrypted database in GitHub or anywere else.
+
+Load database in github repo. It is safe if you upload encrypted data.
+
+```bash
+vault av@myemail.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data'
+```
+
+Load vault database in private github repo. You need to provide token. But this token expired and you need to generate new link.
+
+```bash
+vault av@myemail.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data?token=TOKEN'
+```
+
+You can create secret gist and load encrypted database.
+
+```bash
+vault av@myemail.com --source 'https://gist.githubusercontent.com/MYGIT/1234/raw/1234/vault_data'
+```
+
+You can switch to remote source at runtime using TUI.
+
+![Screenshot](screenshot/screenshot3.png)
+
+
+# Use CLI to manage vault
+
+## Get data from the source vault
+
+```bash
+vault av@myemail.com -g aws login
+```
+
+```bash
+vault av@myemail.com -g aws login | wc -c
+```
+
+## Add data to the local vault
+
+```bash
+vault av@myemail.com -a aws login av@myemail.com
+```
+
+## Update data in the local vault (default value for second argument is "group")
+
+```bash
+vault av@myemail.com -u aws
+```
+
+You can update group name only
+
+```bash
+vault av@myemail.com -u group myaws
+```
+
+You can update key name only
+
+```bash
+vault av@myemail.com -u myaws myaws login username
+```
+
+You should use 5 arguments to update value
+
+```bash
+vault av@myemail.com -u myaws myaws username username alex@myemail.com
+```
+
+## Clear data in the local vault
+
+```bash
+vault av@myemail.com -c myaws username
+```
+
+## Erase all data in the local vault
+
+```bash
+vault av@myemail.com -e
 ```
 
 # Road Map

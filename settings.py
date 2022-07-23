@@ -11,9 +11,12 @@ URL = 'https://github.com/schwarzbox/Vault'
 # const
 VAULT_TITLE = 'Vault'
 VAULT_DB = 'vault_data'
+VAULT_GROUP = 'group'
+
 # regexp
 EMAIL_REGEXP = r"([-!#-'*+/-9=?A-Z^-~]+(\.[-!#-'*+/-9=?A-Z^-~]+)*|\"([]!#-[^-~ \t]|(\\[\t -~]))+\")@([-!#-'*+/-9=?A-Z^-~]+(\.[-!#-'*+/-9=?A-Z^-~]+)*|\[[\t -Z^-~]*])"
 PASSWORD_REGEXP = r"(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\_\-@$!%*#?&])[A-Za-z\d\_\-@$!#%*?&]{8,}$"
+
 # colors
 WHITE = 'white'
 GREEN = 'green'
@@ -22,6 +25,7 @@ YELLOW = 'yellow'
 RED = '#FF004B'
 GRAY = '#666666'
 BLUE = '#3B00FF'
+
 # icons
 CLOSE = '✕'
 WHO = 'Who'
@@ -37,8 +41,9 @@ KEY = '🔑'
 COPY = '✏️'
 DONE = '🔆'
 
-# art
+# art font
 TITLE_FONT = 'lockergnome'
+
 # messages
 INFO_MESSAGE = '[' + GREEN + ']{}[/' + GREEN + ']'
 WARNING_MESSAGE = '[' + YELLOW + ']{}[/' + YELLOW + ']'

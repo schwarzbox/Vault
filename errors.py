@@ -56,6 +56,18 @@ class InvalidURL(VaultException):
         super().__init__(self.message)
 
 
+class ValueAlreadyExists(VaultException):
+    def __init__(self, value, message='Value already exists:'):
+        self.message = f'{message} {value}'
+        super().__init__(self.message)
+
+
+class ValueNotExists(VaultException):
+    def __init__(self, value, message='Value not exists:'):
+        self.message = f'{message} {value}'
+        super().__init__(self.message)
+
+
 class InvalidEmail(VaultException):
     message = 'Use valid email'
 
@@ -72,13 +84,13 @@ class InvalidPassword(VaultException):
     message = f'Use strong password:\n{help_message}'
 
 
-def show_info(message):
-    print(INFO_MESSAGE.format(message))
+def show_info(message, end='\n'):
+    print(INFO_MESSAGE.format(message), end=end)
 
 
-def show_warning(message):
-    print(WARNING_MESSAGE.format(message))
+def show_warning(message, end='\n'):
+    print(WARNING_MESSAGE.format(message), end=end)
 
 
-def show_error(message):
-    print(ERROR_MESSAGE.format(message))
+def show_error(message, end='\n'):
+    print(ERROR_MESSAGE.format(message), end=end)
