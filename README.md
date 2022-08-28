@@ -1,6 +1,6 @@
 # vault
 
-v1.19
+v1.2
 
 Command line password manager.
 
@@ -172,6 +172,9 @@ You can switch to remote source at runtime using TUI.
 
 ![Screenshot](screenshot/screenshot3.png)
 
+# Use TUI to add, update and clear data in the local vault
+
+    (WIP)
 
 # Use CLI to manage vault
 
@@ -191,7 +194,7 @@ vault av@myemail.com -g aws login | wc -c
 vault av@myemail.com -a aws login av@myemail.com
 ```
 
-## Update data in the local vault (default value for second argument is "group")
+## Update data in the local vault (default value for second argument is "vault")
 
 ```bash
 vault av@myemail.com -u aws
@@ -227,8 +230,3 @@ vault av@myemail.com -c myaws username
 vault av@myemail.com -e
 ```
 
-# Road Map
-
-v1.2
-
-- TUI CRUD

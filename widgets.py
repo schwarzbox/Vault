@@ -23,7 +23,16 @@ from textual.widgets import (
 
 from mixins import ButtonMixin, InputTextMixin
 from settings import (
-    BLUE, BRIGHT_GREEN, COPY, DONE, GRAY, GREEN, KEY, WHITE, YELLOW
+    ACTION_TIME,
+    BRIGHT_GREEN,
+    COPY,
+    DONE,
+    GRAY,
+    GREEN,
+    KEY,
+    LOCAL_STYLE,
+    NOTIFICATION_TIME,
+    YELLOW
 )
 
 NodeDataType = TypeVar('NodeDataType')
@@ -35,20 +44,31 @@ class CellGrid(GridView):
         self.cells = cells
 
     async def on_mount(self) -> None:
-        self.grid.add_column('col', fraction=1, max_size=24)
-        self.grid.add_row('row', fraction=1, max_size=3)
+        self.grid.add_column(
+            'col',
+            fraction=1,
+            min_size=8,
+            max_size=24,
+            repeat=4
+        )
+        self.grid.add_row(
+            'row', fraction=1, max_size=3
+        )
         self.grid.set_repeat(True, True)
         self.grid.set_align('center', 'center')
         self.update_cells(self.cells)
 
-    def update_cells(self, cells) -> None:
+    def update_cells(self, cells, repeat_grid=(True, True)) -> None:
+        self.grid.set_repeat(*repeat_grid)
         self.grid.widgets.clear()
         self.grid.place(*cells)
         self.refresh()
 
 
 class CellButton(ButtonMixin, Button):
-    def __init__(self, *args, encoder, title, value, **kwargs):
+    def __init__(
+        self, *args, encoder, title, value, action, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.encoder = encoder
         self.title = self.encoder.decode(title)
@@ -56,17 +76,26 @@ class CellButton(ButtonMixin, Button):
         self.value = value
         self.on_click_label = KEY
 
+        self.action = (
+            action
+            or (lambda title, label, value: pc.copy(value))
+        )
+
     def on_click(self) -> None:
         super().on_click()
-        pc.copy(self.encoder.decode(self.value))
+        self.action(
+            self.title, self.label, self.encoder.decode(self.value)
+        )
 
 
 class CopyButton(ButtonMixin, Button):
-    def __init__(self, *args, title, sec=1, **kwargs):
+    def __init__(
+        self, *args, title, sec=ACTION_TIME, action=None, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.title = title
         self.on_click_label = COPY
-        self.action = None
+        self.action = action
         self.visible = False
         self.sec = sec
 
@@ -86,11 +115,13 @@ class CopyButton(ButtonMixin, Button):
 
 
 class ActionButton(ButtonMixin, Button):
-    def __init__(self, *args, title, sec=1, **kwargs):
+    def __init__(
+        self, *args, title, sec=ACTION_TIME, action=None, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.title = title
         self.on_click_label = DONE
-        self.action = None
+        self.action = action
         self.visible = False
         self.sec = sec
 
@@ -137,7 +168,7 @@ class Notification(Widget):
     def hide(self):
         self.visible = False
 
-    def show(self, title, label, color=GREEN, sec=2):
+    def show(self, title, label, color=GREEN, sec=NOTIFICATION_TIME):
         self.title = title
         self.label = label
         self.border_color = color
@@ -219,19 +250,15 @@ class LoadTree(TreeControl):
 
 
 class InputText(InputTextMixin):
-    def __init__(self, title):
+    def __init__(self, title: str, label: str):
         super().__init__()
         self.title = title
-        self.on_leave_label = 'Database PATH (CTRL+V)'
+        self.default_content = label
         self.visible = False
 
     def on_key(self, event: events.Key) -> None:
         if self.mouse_over:
-            if str(event.key) == 'ctrl+h':
-                self.content = ''
-                self.refresh()
-
-            elif str(event.key) == 'ctrl+v':
+            if str(event.key) == 'ctrl+v':
                 self.content = ''
                 self.content += pc.paste()
                 self.refresh()
@@ -244,17 +271,19 @@ class HighlightFooter(Footer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.change_style = False
+        self._style = LOCAL_STYLE
 
-    def get_style(self, change_style=False):
-        return (
-            f'{WHITE} on {BLUE}'
-            if change_style else f'{WHITE} on dark_green'
-        )
+    @property
+    def style(self):
+        return self._style
+
+    @style.setter
+    def style(self, style):
+        self._style = style
 
     def make_key_text(self) -> Text:
         text = Text(
-            style=self.get_style(self.change_style),
+            style=self.style,
             no_wrap=True,
             overflow='ellipsis',
             justify='left',

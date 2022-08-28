@@ -4,7 +4,7 @@ from rich import print
 
 from settings import (
     ERROR_MESSAGE,
-    INFO_MESSAGE,
+    NOTIFICATION_MESSAGE,
     WARNING_MESSAGE
 )
 
@@ -56,14 +56,26 @@ class InvalidURL(VaultException):
         super().__init__(self.message)
 
 
-class ValueAlreadyExists(VaultException):
-    def __init__(self, value, message='Value already exists:'):
+class GroupAlreadyExists(VaultException):
+    def __init__(self, value, message='Group already exists:'):
         self.message = f'{message} {value}'
         super().__init__(self.message)
 
 
-class ValueNotExists(VaultException):
-    def __init__(self, value, message='Value not exists:'):
+class GroupNotExists(VaultException):
+    def __init__(self, value, message='Group not exists:'):
+        self.message = f'{message} {value}'
+        super().__init__(self.message)
+
+
+class KeyAlreadyExists(VaultException):
+    def __init__(self, value, message='Key already exists:'):
+        self.message = f'{message} {value}'
+        super().__init__(self.message)
+
+
+class KeyNotExists(VaultException):
+    def __init__(self, value, message='Key not exists:'):
         self.message = f'{message} {value}'
         super().__init__(self.message)
 
@@ -84,8 +96,8 @@ class InvalidPassword(VaultException):
     message = f'Use strong password:\n{help_message}'
 
 
-def show_info(message, end='\n'):
-    print(INFO_MESSAGE.format(message), end=end)
+def show_notification(message, end='\n'):
+    print(NOTIFICATION_MESSAGE.format(message), end=end)
 
 
 def show_warning(message, end='\n'):

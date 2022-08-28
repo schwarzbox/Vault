@@ -63,7 +63,7 @@ class InputTextMixin(Widget):
         if self.content or self.mouse_over:
             text = self.content
         else:
-            text = self.on_leave_label
+            text = self.default_content
 
         renderable = Align.center(
             Text(text),

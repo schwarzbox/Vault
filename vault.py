@@ -13,6 +13,10 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 # shiv -c vault -o vault --preamble preamble.py .
 
+# protection when load data
+# check warning and errors
+# refactor TUI update readme
+
 import argparse
 import json
 import os
@@ -37,7 +41,6 @@ from settings import (
     TITLE_FONT,
     URL,
     VAULT_DB,
-    VAULT_GROUP,
     VAULT_TITLE,
     VERSION,
 )
@@ -253,12 +256,12 @@ class Vault:
         author = f'{AUTHOR}\n{EMAIL}'
         message = f'{info}\n\n{desc}\n\n{author}'
         if verbose:
-            err.show_info(f'About:\n\n{message}\n')
+            err.show_notification(f'Info:\n\n{message}\n')
         else:
             return message
 
     def version(self):
-        err.show_info(f'Version: {VERSION}')
+        err.show_notification(f'Version: {VERSION}')
 
     def get_data(self, group, value):
         decoded = self.decode_vault()
@@ -268,51 +271,51 @@ class Vault:
         if self.is_piped:
             end = ''
 
-        err.show_info(group.get(value, ''), end=end)
+        err.show_notification(group.get(value, ''), end=end)
 
     def add_data(self, group, key, value):
         decoded = self.decode_vault()
 
         decoded[group] = decoded.get(group, {})
 
-        if not decoded[group].get(key, None):
+        if not (decoded[group].get(key, None) is not None):
             decoded[group][key] = value
             self.vault = decoded
             self.save_vault()
         else:
-            raise err.ValueAlreadyExists(key)
+            raise err.KeyAlreadyExists(key)
 
     def update_data(
         self,
         group,
-        new_group=VAULT_GROUP,
+        new_group=VAULT_TITLE,
         key=None,
         new_key=None,
         new_value=None
     ):
         decoded = self.decode_vault()
-        if decoded.get(group, None):
+        if decoded.get(group, None) is not None:
             data = {**decoded[group]}
             del decoded[group]
-            if decoded.get(new_group, None):
-                raise err.ValueAlreadyExists(new_group)
+            if decoded.get(new_group.lower(), None) is not None:
+                raise err.GroupAlreadyExists(new_group)
 
             decoded[new_group] = data
         else:
-            raise err.ValueNotExists(group)
+            raise err.GroupNotExists(group)
 
-        if key and new_key:
-            if decoded[new_group].get(key, None):
+        if key is not None and new_key is not None:
+            if decoded[new_group].get(key, None) is not None:
                 data = decoded[new_group][key]
                 del decoded[new_group][key]
-                if decoded[new_group].get(new_key, None):
-                    raise err.ValueAlreadyExists(new_key)
+                if decoded[new_group].get(new_key, None) is not None:
+                    raise err.KeyAlreadyExists(new_key)
 
                 decoded[new_group][new_key] = data
             else:
-                raise err.ValueNotExists(key)
+                raise err.KeyNotExists(key)
 
-        if new_value:
+        if new_value is not None:
             decoded[new_group][new_key] = new_value
 
         self.vault = decoded
@@ -320,8 +323,8 @@ class Vault:
 
     def clear_data(self, group, key):
         decoded = self.decode_vault()
-        if decoded.get(group, None):
-            if decoded[group].get(key, None):
+        if decoded.get(group, None) is not None:
+            if decoded[group].get(key, None) is not None:
                 del decoded[group][key]
                 if len(decoded[group]) == 0:
                     del decoded[group]
@@ -329,9 +332,9 @@ class Vault:
                 self.vault = decoded
                 self.save_vault()
             else:
-                raise err.ValueNotExists(key)
+                raise err.KeyNotExists(key)
         else:
-            raise err.ValueNotExists(group)
+            raise err.GroupNotExists(group)
 
     def erase_data(self):
         self.vault = {}
@@ -494,8 +497,10 @@ def main():
             err.InvalidDataFormat,
             err.InvalidURL,
             err.LoginFailed,
-            err.ValueNotExists,
-            err.ValueAlreadyExists
+            err.GroupNotExists,
+            err.GroupAlreadyExists,
+            err.KeyNotExists,
+            err.KeyAlreadyExists
         ) as e:
             try:
                 err.show_error(e)
