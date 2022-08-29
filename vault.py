@@ -13,9 +13,17 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 # shiv -c vault -o vault --preamble preamble.py .
 
-# protection when load data
-# check warning and errors
+# removed erase from TUI
+# added edit mode with add, update and clear action in TUI
+
+# list ordering
+# add namespace for globals
+# add -l list all data in CLI
+
+# check warning and errors (move remove warning on select)
+# return 'Database not found'?
 # refactor TUI update readme
+
 
 import argparse
 import json
@@ -207,7 +215,7 @@ class Vault:
             )
 
         err.show_warning(
-            f'Remove vault: {self.encoder.decode(self.key)}'
+            f'Remove vault:\n{self.encoder.decode(self.key)}'
         )
 
     def get_json_path(self):
@@ -223,7 +231,7 @@ class Vault:
         with open(path, 'w') as file:
             json.dump(self.decode_vault(), file)
         if verbose:
-            err.show_warning(f'Dump JSON: "{path}"')
+            err.show_warning(f'Dump JSON:\n"{path}"')
         else:
             return f'"{path}"'
 
@@ -246,7 +254,7 @@ class Vault:
 
     def find_database(self, path, verbose=True):
         if verbose:
-            err.show_warning(f'Find DB: "{path}"')
+            err.show_warning(f'Find DB:\n"{path}"')
         else:
             return f'"{path}"'
 
@@ -256,12 +264,12 @@ class Vault:
         author = f'{AUTHOR}\n{EMAIL}'
         message = f'{info}\n\n{desc}\n\n{author}'
         if verbose:
-            err.show_notification(f'Info:\n\n{message}\n')
+            err.show_notification(f'Info:\n{message}')
         else:
             return message
 
     def version(self):
-        err.show_notification(f'Version: {VERSION}')
+        err.show_notification(f'Version:\n{VERSION}')
 
     def get_data(self, group, value):
         decoded = self.decode_vault()

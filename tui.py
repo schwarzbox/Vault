@@ -44,7 +44,6 @@ from settings import (
     NOTIFICATION_TIME,
     OK_LABEL,
     PASTE_LABEL,
-    PATH_LABEL,
     RED,
     REMOTE,
     REMOTE_STYLE,
@@ -80,6 +79,11 @@ class ViewApp(App):
                 binding.description = value
 
     def _set_source_mode(self):
+        if self.state == State.UPDATE:
+            self.cells_grid.update_cells(
+                cells=self._create_cells()
+            )
+
         if self.vlt.is_local_source:
             self.state = State.LOCAL
             self.state_type = f'{SOURCE} {LOCAL}'
@@ -99,10 +103,17 @@ class ViewApp(App):
             self.state = State.UPDATE
             self.state_type = f'{SOURCE} {UPDATE}'
             self.footer.style = UPDATE_STYLE
+
+            self._process_edit_cells()
+
         elif self.state == State.UPDATE:
             self.state = State.LOCAL
             self.state_type = f'{SOURCE} {LOCAL}'
             self.footer.style = LOCAL_STYLE
+
+            self.cells_grid.update_cells(
+                cells=self._create_cells()
+            )
 
         self.footer._key_text = None
         self.footer.refresh(layout=True)
@@ -134,12 +145,12 @@ class ViewApp(App):
         self.whoami.visible = not self.whoami.visible
 
         self._hide_pop_up_view(self.whoami)
-        self.cells.visible = True
+        self.cells_grid.visible = True
         self._set_source_mode()
 
     def _dump_data(self, loc):
         try:
-            return self.vlt.dump_data(loc, verbose=False)
+            return self.vlt.dump_data(loc, verbose=False).strip('"')
         except err.ActionNotAllowedForRemote as e:
             title = ERROR_LABEL
             label = str(e)
@@ -154,14 +165,14 @@ class ViewApp(App):
         self.dump_json.visible = not self.dump_json.visible
 
         self._hide_pop_up_view(self.dump_json)
-        self.cells.visible = True
+        self.cells_grid.visible = True
         self._set_source_mode()
 
     def action_load_data(self):
         self.load_json.visible = not self.load_json.visible
 
         self._hide_pop_up_view(self.load_json)
-        self.cells.visible = not self.load_json.visible
+        self.cells_grid.visible = not self.load_json.visible
         self._set_source_mode()
 
     def _process_edit_view(self, group='', key='', value=''):
@@ -171,13 +182,9 @@ class ViewApp(App):
         self.edit_value.visible = not self.edit_value.visible
         self.edit_button.visible = not self.edit_button.visible
 
-        self.edit_group.title = group
-        self.edit_key.title = key
-        self.edit_value.title = value
-
-        self.edit_group.content = ''
-        self.edit_key.content = ''
-        self.edit_value.content = ''
+        self.edit_group.content = group
+        self.edit_key.content = key
+        self.edit_value.content = value
 
     def _process_edit_data(self, edit_action):
         self.edit_cancel.hide()
@@ -213,12 +220,12 @@ class ViewApp(App):
             self.edit_value.content
         )
 
-    def _update_data(self):
+    def _update_data(self, group, key):
         self.vlt.update_data(
-            self.edit_group.title,
-            self.edit_group.content or self.edit_group.title,
-            self.edit_key.title,
-            self.edit_key.content or self.edit_key.title,
+            group,
+            self.edit_group.content,
+            key,
+            self.edit_key.content,
             self.edit_value.content
         )
 
@@ -236,7 +243,9 @@ class ViewApp(App):
         self._process_edit_view(group, key, value)
         self.edit_cancel.title = UPDATE_LABEL
         self.edit_button.action = self.action_context(
-            self._update_data
+            self._update_data,
+            group=group,
+            key=key
         )
 
     def _process_edit_cells(self):
@@ -265,7 +274,7 @@ class ViewApp(App):
             )
         )
 
-        self.cells.update_cells(
+        self.cells_grid.update_cells(
             cells=final_cells, repeat_grid=(False, True)
         )
 
@@ -273,20 +282,13 @@ class ViewApp(App):
         self._hide_pop_up_view()
         try:
             self._set_edit_mode()
-
-            if self.state == State.UPDATE:
-                self._process_edit_cells()
-            else:
-                self.cells.update_cells(
-                    cells=self._create_cells()
-                )
         except err.ActionNotAllowedForRemote as e:
             title = ERROR_LABEL
             label = str(e)
             color = RED
             self.notification.show(title, label, color)
 
-        self.cells.visible = True
+        self.cells_grid.visible = True
 
     def _set_source(self):
         login, password = (
@@ -302,7 +304,7 @@ class ViewApp(App):
         try:
             self.vlt.set_source(source)
             self.vlt.get_user(login, password)
-            self.cells.update_cells(cells=self._create_cells())
+            self.cells_grid.update_cells(cells=self._create_cells())
             self._show_notification_load_json()
         except (
             err.LocalDataBaseNotFound,
@@ -355,16 +357,16 @@ class ViewApp(App):
 
     def _set_default_source(self):
         self.source_update.content = self.vlt.get_default_source()
+        # prevent hide
+        self.source_default.visible = True
 
     def action_set_source(self):
         self.source_default.action = self._set_default_source
         self.source_button.action = self._set_source
 
         self.source_update.content = ''
-        source_update_visible = self.source_update.visible
-        self.source_update.visible = not source_update_visible
-        # to hide them together after set default source
-        self.source_default.visible = not source_update_visible
+        self.source_update.visible = not self.source_update.visible
+        self.source_default.visible = not self.source_default.visible
         self.source_button.visible = not self.source_button.visible
 
         self._hide_pop_up_view(
@@ -372,20 +374,22 @@ class ViewApp(App):
             self.source_update,
             self.source_button
         )
-        self.cells.visible = True
+        self.cells_grid.visible = True
+
         self._set_source_mode()
+
+    def _find_database(self, loc):
+        return self.vlt.find_database(loc, verbose=False).strip('"')
 
     def action_find_database(self):
         loc = self.vlt.get_database_path()
         self.find_db.label = loc
-        self.find_db.action = lambda: self.vlt.find_database(
-            loc, verbose=False
-        )
+        self.find_db.action = lambda: self._find_database(loc)
 
         self.find_db.visible = not self.find_db.visible
 
         self._hide_pop_up_view(self.find_db)
-        self.cells.visible = True
+        self.cells_grid.visible = True
         self._set_source_mode()
 
     def action_info_vault(self):
@@ -394,7 +398,7 @@ class ViewApp(App):
         self.info_vault.visible = not self.info_vault.visible
 
         self._hide_pop_up_view(self.info_vault)
-        self.cells.visible = True
+        self.cells_grid.visible = True
         self._set_source_mode()
 
     async def handle_tree_click(
@@ -408,7 +412,7 @@ class ViewApp(App):
             try:
                 self.action_load_data()
                 self.vlt.load_data(path)
-                self.cells.update_cells(cells=self._create_cells())
+                self.cells_grid.update_cells(cells=self._create_cells())
                 self._show_notification_load_json()
             except (
                 err.ActionNotAllowedForRemote,
@@ -471,8 +475,8 @@ class ViewApp(App):
         self.footer = HighlightFooter()
         await self.view.dock(self.footer, edge='bottom', z=2)
 
-        self.cells = CellGrid(cells=self._create_cells())
-        self.cells.visible = True
+        self.cells_grid = CellGrid(cells=self._create_cells())
+        self.cells_grid.visible = True
 
         self.notification = Notification(
             title='', label=''
@@ -497,7 +501,7 @@ class ViewApp(App):
             sec=FAST_ACTION_TIME
         )
         self.source_update = InputText(
-            title=PATH_LABEL, label=PASTE_LABEL
+            title=PASTE_LABEL, content=''
         )
         self.source_button = ActionButton(
             title=SOURCE, label=OK_LABEL
@@ -511,13 +515,13 @@ class ViewApp(App):
         )
 
         self.edit_group = InputText(
-            title='', label=PASTE_LABEL
+            title=PASTE_LABEL, content=''
         )
         self.edit_key = InputText(
-            title='', label=PASTE_LABEL
+            title=PASTE_LABEL, content=''
         )
         self.edit_value = InputText(
-            title='', label=PASTE_LABEL
+            title=PASTE_LABEL, content=''
         )
         self.edit_button = ActionButton(
             title=EDIT, label=OK_LABEL
@@ -553,7 +557,7 @@ class ViewApp(App):
         await self.view.dock(self.find_db, z=2)
         await self.view.dock(self.info_vault, z=2)
 
-        await self.view.dock(self.cells, z=1)
+        await self.view.dock(self.cells_grid, z=1)
 
         self._show_notification_load_json()
         self._set_source_mode()

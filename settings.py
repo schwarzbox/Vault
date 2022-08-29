@@ -46,7 +46,6 @@ CLEAR = '−'
 
 # labels
 DEFAULT_LABEL = 'Default'
-PATH_LABEL = 'Path'
 OK_LABEL = 'OK'
 CANCEL_LABEL = 'CANCEL'
 PASTE_LABEL = 'CTRL+V'

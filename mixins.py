@@ -49,7 +49,6 @@ class ButtonMixin:
 
 
 class InputTextMixin(Widget):
-    content: Reactive[RenderableType] = Reactive('')
     mouse_over: Reactive[RenderableType] = Reactive(False)
     height = None
 
@@ -60,14 +59,14 @@ class InputTextMixin(Widget):
         self.mouse_over = False
 
     def render(self) -> RenderableType:
-        if self.content or self.mouse_over:
-            text = self.content
+        if self.mouse_over:
+            color = YELLOW
         else:
-            text = self.default_content
+            color = GREEN
 
         renderable = Align.center(
-            Text(text),
-            style=GREEN,
+            Text(self.content),
+            style=color,
             vertical='middle',
         )
 

@@ -52,7 +52,9 @@ class CellGrid(GridView):
             repeat=4
         )
         self.grid.add_row(
-            'row', fraction=1, max_size=3
+            'row',
+            fraction=1,
+            max_size=3
         )
         self.grid.set_repeat(True, True)
         self.grid.set_align('center', 'center')
@@ -129,9 +131,9 @@ class ActionButton(ButtonMixin, Button):
         self.visible = False
 
     def _hide_action(self):
+        self.hide()
         if self.action:
             self.action()
-        self.hide()
 
     def on_click(self) -> None:
         super().on_click()
@@ -250,10 +252,10 @@ class LoadTree(TreeControl):
 
 
 class InputText(InputTextMixin):
-    def __init__(self, title: str, label: str):
+    def __init__(self, title: str, content: str):
         super().__init__()
         self.title = title
-        self.default_content = label
+        self.content = content
         self.visible = False
 
     def on_key(self, event: events.Key) -> None:
