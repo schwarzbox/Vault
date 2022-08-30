@@ -1,6 +1,6 @@
 # vault
 
-v1.2
+v1.22
 
 Command line password manager.
 
@@ -186,6 +186,12 @@ vault av@myemail.com -g aws login
 
 ```bash
 vault av@myemail.com -g aws login | wc -c
+```
+
+## List all groups and keys
+
+```bash
+vault av@myemail.com -l
 ```
 
 ## Add data to the local vault

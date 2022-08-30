@@ -49,6 +49,7 @@ class ButtonMixin:
 
 
 class InputTextMixin(Widget):
+    content: Reactive[RenderableType] = Reactive('')
     mouse_over: Reactive[RenderableType] = Reactive(False)
     height = None
 
@@ -66,7 +67,7 @@ class InputTextMixin(Widget):
 
         renderable = Align.center(
             Text(self.content),
-            style=color,
+            style=GREEN,
             vertical='middle',
         )
 
@@ -75,6 +76,6 @@ class InputTextMixin(Widget):
             title=self.title,
             title_align='left',
             height=self.height,
-            border_style=GREEN,
+            border_style=color,
             box=HEAVY
         )

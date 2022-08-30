@@ -1,7 +1,7 @@
 # vault.py
 
 import os
-import enum
+from enum import Enum
 
 from rich.console import Console
 
@@ -52,14 +52,16 @@ from settings import (
     SOURCE,
     URL,
     UPDATE_LABEL,
-    WHO
+    WARNING_LABEL,
+    WHO,
+    YELLOW
 )
 
 
 console = Console()
 
 
-class State(enum.Enum):
+class State(Enum):
     LOCAL = 1
     REMOTE = 2
     UPDATE = 3
@@ -97,9 +99,7 @@ class ViewApp(App):
         self.footer.refresh(layout=True)
 
     def _set_edit_mode(self):
-        if self.state == State.REMOTE:
-            raise err.ActionNotAllowedForRemote
-        elif self.state == State.LOCAL:
+        if self.state == State.LOCAL:
             self.state = State.UPDATE
             self.state_type = f'{SOURCE} {UPDATE}'
             self.footer.style = UPDATE_STYLE
@@ -118,12 +118,16 @@ class ViewApp(App):
         self.footer._key_text = None
         self.footer.refresh(layout=True)
 
+    def _is_remote_state(self):
+        if self.state == State.REMOTE:
+            raise err.ActionNotAllowedForRemote
+
     def _show_notification_load_json(self):
         if self.vlt.is_empty:
             self.notification.show(
-                NOTIFICATION_LABEL,
+                WARNING_LABEL,
                 'Empty: Load JSON',
-                GREEN,
+                YELLOW,
                 EMPTY_JSON_TIME
             )
 
@@ -138,7 +142,8 @@ class ViewApp(App):
         self.whoami.action = (
             lambda: self.notification.show(
                 NOTIFICATION_LABEL,
-                self.vlt.encoder.decode(self.vlt.key)
+                self.vlt.encoder.decode(self.vlt.key),
+                GREEN
             )
         )
 
@@ -150,14 +155,17 @@ class ViewApp(App):
 
     def _dump_data(self, loc):
         try:
-            return self.vlt.dump_data(loc, verbose=False).strip('"')
+            return self.vlt.dump_data(loc, verbose=False)
         except err.ActionNotAllowedForRemote as e:
-            title = ERROR_LABEL
-            label = str(e)
-            color = RED
-            self.notification.show(title, label, color)
+            self.notification.show(ERROR_LABEL, str(e), RED)
 
     def action_dump_data(self):
+        try:
+            self._is_remote_state()
+        except err.ActionNotAllowedForRemote as e:
+            self.notification.show(ERROR_LABEL, str(e), RED)
+            return
+
         loc = self.vlt.get_json_path()
         self.dump_json.label = os.path.basename(loc)
         self.dump_json.action = lambda: self._dump_data(loc)
@@ -169,6 +177,12 @@ class ViewApp(App):
         self._set_source_mode()
 
     def action_load_data(self):
+        try:
+            self._is_remote_state()
+        except err.ActionNotAllowedForRemote as e:
+            self.notification.show(ERROR_LABEL, str(e), RED)
+            return
+
         self.load_json.visible = not self.load_json.visible
 
         self._hide_pop_up_view(self.load_json)
@@ -203,10 +217,7 @@ class ViewApp(App):
             err.ActionNotAllowedForRemote,
             err.LocalDataBaseNotFound
         ) as e:
-            title = ERROR_LABEL
-            label = str(e)
-            color = RED
-            self.notification.show(title, label, color)
+            self.notification.show(ERROR_LABEL, str(e), RED)
 
     def action_context(self, action, **kwargs):
         return lambda: self._process_edit_data(
@@ -279,14 +290,14 @@ class ViewApp(App):
         )
 
     def action_edit_data(self):
-        self._hide_pop_up_view()
         try:
-            self._set_edit_mode()
+            self._is_remote_state()
         except err.ActionNotAllowedForRemote as e:
-            title = ERROR_LABEL
-            label = str(e)
-            color = RED
-            self.notification.show(title, label, color)
+            self.notification.show(ERROR_LABEL, str(e), RED)
+            return
+
+        self._hide_pop_up_view()
+        self._set_edit_mode()
 
         self.cells_grid.visible = True
 
@@ -361,9 +372,6 @@ class ViewApp(App):
         self.source_default.visible = True
 
     def action_set_source(self):
-        self.source_default.action = self._set_default_source
-        self.source_button.action = self._set_source
-
         self.source_update.content = ''
         self.source_update.visible = not self.source_update.visible
         self.source_default.visible = not self.source_default.visible
@@ -379,7 +387,10 @@ class ViewApp(App):
         self._set_source_mode()
 
     def _find_database(self, loc):
-        return self.vlt.find_database(loc, verbose=False).strip('"')
+        try:
+            return self.vlt.find_database(loc, verbose=False)
+        except err.LocalDataBaseNotFound as e:
+            self.notification.show(ERROR_LABEL, str(e), RED)
 
     def action_find_database(self):
         loc = self.vlt.get_database_path()
@@ -393,8 +404,6 @@ class ViewApp(App):
         self._set_source_mode()
 
     def action_info_vault(self):
-        self.info_vault.action = lambda: URL
-
         self.info_vault.visible = not self.info_vault.visible
 
         self._hide_pop_up_view(self.info_vault)
@@ -421,10 +430,7 @@ class ViewApp(App):
                 err.InvalidJSON,
                 err.InvalidDataFormat
             ) as e:
-                title = ERROR_LABEL
-                label = str(e)
-                color = RED
-                self.notification.show(title, label, color)
+                self.notification.show(ERROR_LABEL, str(e), RED)
         elif directory:
             down = os.path.abspath(directory)
             os.chdir(down)
@@ -498,13 +504,16 @@ class ViewApp(App):
         self.source_default = ActionButton(
             title=DEFAULT_LABEL,
             label=self.vlt.get_default_source(),
+            action=self._set_default_source,
             sec=FAST_ACTION_TIME
         )
         self.source_update = InputText(
             title=PASTE_LABEL, content=''
         )
         self.source_button = ActionButton(
-            title=SOURCE, label=OK_LABEL
+            title=SOURCE,
+            label=OK_LABEL,
+            action=self._set_source
         )
 
         self.edit_cancel = ActionButton(
@@ -531,7 +540,8 @@ class ViewApp(App):
 
         self.info_vault = CopyButton(
             title=INFO,
-            label=self.vlt.info(verbose=False)
+            label=self.vlt.info(verbose=False),
+            action=lambda: URL
         )
 
         await self._create_tree(os.getcwd())

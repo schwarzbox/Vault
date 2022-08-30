@@ -15,15 +15,10 @@ VAULT
 
 # removed erase from TUI
 # added edit mode with add, update and clear action in TUI
-
-# list ordering
-# add namespace for globals
+# move remote errors on select
 # add -l list all data in CLI
 
-# check warning and errors (move remove warning on select)
-# return 'Database not found'?
-# refactor TUI update readme
-
+# TUI update readme
 
 import argparse
 import json
@@ -215,7 +210,7 @@ class Vault:
             )
 
         err.show_warning(
-            f'Remove vault:\n{self.encoder.decode(self.key)}'
+            f'{self.encoder.decode(self.key)}'
         )
 
     def get_json_path(self):
@@ -231,9 +226,9 @@ class Vault:
         with open(path, 'w') as file:
             json.dump(self.decode_vault(), file)
         if verbose:
-            err.show_warning(f'Dump JSON:\n"{path}"')
+            err.show_warning(f'"{path}"')
         else:
-            return f'"{path}"'
+            return path
 
     def load_data(self, path):
         try:
@@ -248,15 +243,18 @@ class Vault:
             raise err.InvalidDataFormat(path)
 
     def get_database_path(self):
-        if self.is_local_source and not os.path.exists(self.vault_db):
-            return 'Database not found'
         return self.vault_db
 
     def find_database(self, path, verbose=True):
+        if self.is_local_source and not os.path.exists(path):
+            raise err.LocalDataBaseNotFound(
+                os.path.basename(self.vault_db)
+            )
+
         if verbose:
-            err.show_warning(f'Find DB:\n"{path}"')
+            err.show_notification(f'"{path}"')
         else:
-            return f'"{path}"'
+            return path
 
     def info(self, verbose=True):
         info = f'{VAULT_TITLE} v{VERSION} {LICENSE}'
@@ -264,14 +262,14 @@ class Vault:
         author = f'{AUTHOR}\n{EMAIL}'
         message = f'{info}\n\n{desc}\n\n{author}'
         if verbose:
-            err.show_notification(f'Info:\n{message}')
+            err.show_notification(f'{message}')
         else:
             return message
 
     def version(self):
-        err.show_notification(f'Version:\n{VERSION}')
+        err.show_notification(f'Version: {VERSION}')
 
-    def get_data(self, group, value):
+    def get_data(self, group, key):
         decoded = self.decode_vault()
         group = decoded.get(group, {})
 
@@ -279,7 +277,16 @@ class Vault:
         if self.is_piped:
             end = ''
 
-        err.show_notification(group.get(value, ''), end=end)
+        err.show_notification(group.get(key, ''), end=end)
+
+    def list_data(self):
+        decoded = self.decode_vault()
+        for group in decoded:
+            keys = '\n\t'.join(decoded[group].keys())
+            err.show_warning(group)
+            err.show_notification(
+                f'\t{keys}'
+            )
 
     def add_data(self, group, key, value):
         decoded = self.decode_vault()
@@ -302,24 +309,32 @@ class Vault:
         new_value=None
     ):
         decoded = self.decode_vault()
+        group_order = decoded.keys()
         if decoded.get(group, None) is not None:
-            data = {**decoded[group]}
-            del decoded[group]
-            if decoded.get(new_group.lower(), None) is not None:
-                raise err.GroupAlreadyExists(new_group)
+            group_decoded = {}
+            for old_group in group_order:
+                data = decoded[old_group]
+                if old_group == group:
+                    group_decoded[new_group] = data
+                else:
+                    group_decoded[old_group] = data
 
-            decoded[new_group] = data
+            decoded = group_decoded
         else:
             raise err.GroupNotExists(group)
 
         if key is not None and new_key is not None:
             if decoded[new_group].get(key, None) is not None:
-                data = decoded[new_group][key]
-                del decoded[new_group][key]
-                if decoded[new_group].get(new_key, None) is not None:
-                    raise err.KeyAlreadyExists(new_key)
+                key_order = decoded[new_group].keys()
 
-                decoded[new_group][new_key] = data
+                key_decoded = {}
+                for old_key in key_order:
+                    data = decoded[new_group][old_key]
+                    if old_key == key:
+                        key_decoded[new_key] = data
+                    else:
+                        key_decoded[old_key] = data
+                decoded[new_group] = key_decoded
             else:
                 raise err.KeyNotExists(key)
 
@@ -412,6 +427,10 @@ def main():
         metavar=('GROUP', 'KEY'),
         help='get data from the source vault'
     )
+    parser.add_argument(
+        '-l', '--list', action='store_true',
+        help='list data from the source vault'
+    )
     main_group.add_argument(
         '-a', '--add', nargs=3, dest='add', type=str,
         metavar=('GROUP', 'KEY', 'VALUE'),
@@ -462,7 +481,10 @@ def main():
         ) as e:
             err.show_error(e)
     elif args.find:
-        vlt.find_database(vlt.get_database_path())
+        try:
+            vlt.find_database(vlt.get_database_path())
+        except err.LocalDataBaseNotFound as e:
+            err.show_error(e)
     elif args.version:
         vlt.version()
     elif args.info:
@@ -482,6 +504,8 @@ def main():
                 vlt.remove_vault()
             elif args.get:
                 vlt.get_data(*args.get)
+            elif args.list:
+                vlt.list_data()
             elif args.add:
                 vlt.add_data(*args.add)
                 tui.ViewApp.run(title=VAULT_TITLE, vlt=vlt)

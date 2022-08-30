@@ -5,7 +5,7 @@ AUTHOR = 'Alexander Veledzimovich'
 EMAIL = 'veledz@gmail.com'
 DESCRIPTION = 'Command line password manager'
 LICENSE = 'MIT'
-VERSION = 1.2
+VERSION = 1.22
 URL = 'https://github.com/schwarzbox/Vault'
 
 # const
@@ -41,7 +41,7 @@ INFO = 'Info'
 KEY = '🔑'
 COPY = '✏️'
 DONE = '🔆'
-ADD = '✚'
+ADD = '+'
 CLEAR = '−'
 
 # labels
@@ -49,13 +49,10 @@ DEFAULT_LABEL = 'Default'
 OK_LABEL = 'OK'
 CANCEL_LABEL = 'CANCEL'
 PASTE_LABEL = 'CTRL+V'
-NOTIFICATION_LABEL = 'Notification'
-ERROR_LABEL = 'Error'
-WARNING_LABEL = 'Warning'
 ADD_LABEL = 'Add'
 UPDATE_LABEL = 'Update'
 
-# TIMERS
+# time
 ACTION_TIME = 1
 FAST_ACTION_TIME = 0.2
 EMPTY_JSON_TIME = 3
@@ -70,6 +67,9 @@ UPDATE_STYLE = f'{WHITE} on {YELLOW}'
 TITLE_FONT = 'lockergnome'
 
 # messages
+NOTIFICATION_LABEL = 'Notification'
+ERROR_LABEL = 'Error'
+WARNING_LABEL = 'Warning'
 NOTIFICATION_MESSAGE = '[' + GREEN + ']{}[/' + GREEN + ']'
 WARNING_MESSAGE = '[' + YELLOW + ']{}[/' + YELLOW + ']'
 ERROR_MESSAGE = '[' + RED + ']{}[/' + RED + ']'
