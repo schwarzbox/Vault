@@ -55,17 +55,19 @@ vault -h
 
 ![Screenshot](screenshot/screenshot2.png)
 
-# Info
+## Info
 
 ```bash
 vault --info
 ```
 
-# Version
+## Version
 
 ```bash
 vault --version
 ```
+
+# Create vault
 
 ```bash
 # enter login and run sign-up process
@@ -76,7 +78,7 @@ vault av@myemail.com -in
 vault av@myemail.com
 ```
 
-Note: User can use same login with different password to create different vault.
+Note: User can use same login with new password to create different vault.
 
 # Prepare JSON with your sensetive data. Try to use emojis in titles.
 
