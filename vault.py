@@ -13,13 +13,6 @@ VAULT
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 # shiv -c vault -o vault --preamble preamble.py .
 
-# removed erase from TUI
-# added edit mode with add, update and clear action in TUI
-# move remote errors on select
-# add -l list all data in CLI
-
-# TUI update readme
-
 import argparse
 import json
 import os
@@ -226,7 +219,7 @@ class Vault:
         with open(path, 'w') as file:
             json.dump(self.decode_vault(), file)
         if verbose:
-            err.show_warning(f'"{path}"')
+            err.show_warning(path)
         else:
             return path
 
@@ -252,7 +245,7 @@ class Vault:
             )
 
         if verbose:
-            err.show_notification(f'"{path}"')
+            err.show_notification(path)
         else:
             return path
 
@@ -267,7 +260,7 @@ class Vault:
             return message
 
     def version(self):
-        err.show_notification(f'Version: {VERSION}')
+        err.show_notification(VERSION)
 
     def get_data(self, group, key):
         decoded = self.decode_vault()

@@ -1,6 +1,6 @@
 # vault
 
-v1.22
+v1.3
 
 Command line password manager.
 
@@ -55,8 +55,20 @@ vault -h
 
 ![Screenshot](screenshot/screenshot2.png)
 
+# Info
+
 ```bash
-# enter login and run sign up process
+vault --info
+```
+
+# Version
+
+```bash
+vault --version
+```
+
+```bash
+# enter login and run sign-up process
 vault av@myemail.com -up
 # sign-in with login
 vault av@myemail.com -in
@@ -89,7 +101,7 @@ Use example below or use sample.json to test password manager.
 }
 ```
 
-Load sample.json using command line or use TUI after sign in.
+Load sample.json using command line or use TUI after sign-in.
 
 ```bash
 vault av@myemail.com --load sample.json
@@ -115,38 +127,9 @@ Iternally <strong>Vault</strong> use python package <strong>appdirs</strong> to 
 vault --find
 ```
 
-# Info
-
-```bash
-vault --info
-```
-
-# Version
-
-```bash
-vault --version
-```
-
-# Encryption
-
-Vault use SHA256 algorithm. Database is a simple JSON file.
-
-1. When user sign-up app creates <strong>safe key</strong> using login and password.
-2. App combine login and password in one <strong>credential string</strong>.
-3. App uses <strong>safe key</strong> to encode <strong>credential string</strong> and get <strong>user token</strong>.
-4. <strong>User token</strong> uses as unique key for the user vault.
-5. All data in the user vault encrypted using <strong>safe key</strong>.
-6. When user sign-in app creates new safe key from provided login and password.
-7. App tries to decode each <strong>user token</strong> in database and compare with provided login and password.
-8. User successfully sign in when provided login and password matches with decoded data from <strong>user token</strong>.
-
-# Restore password and decode data
-
-Vault never save your decrypted password. Still no way to restore it and decode ecrypted data without password.
-
 # Remote access
 
-<strong>Vault</strong> creates default database and --source flag set to None. You can provide temporary remote or local source for current session.
+<strong>Vault</strong> creates default database and --source flag set to None. You can provide remote or local source for current session.
 
 Upload encrypted database in GitHub or anywere else.
 
@@ -172,11 +155,15 @@ You can switch to remote source at runtime using TUI.
 
 ![Screenshot](screenshot/screenshot3.png)
 
-# Use TUI to add, update and clear data in the local vault
+# Use TUI to manage vault.
 
-    (WIP)
+![Screenshot](screenshot/screenshot4.png)
 
-# Use CLI to manage vault
+Add, update and clear data in the local vault
+
+![Screenshot](screenshot/screenshot5.png)
+
+# Use CL to manage vault.
 
 ## Get data from the source vault
 
@@ -236,3 +223,19 @@ vault av@myemail.com -c myaws username
 vault av@myemail.com -e
 ```
 
+# Encryption
+
+Vault use SHA256 algorithm. Database is a simple JSON file.
+
+1. When user sign-up app creates <strong>safe key</strong> using login and password.
+2. App combine login and password in one <strong>credential string</strong>.
+3. App uses <strong>safe key</strong> to encode <strong>credential string</strong> and get <strong>user token</strong>.
+4. <strong>User token</strong> uses as unique key for the user vault.
+5. All data in the user vault encrypted using <strong>safe key</strong>.
+6. When user sign-in app creates new safe key from provided login and password.
+7. App tries to decode each <strong>user token</strong> in database and compare with provided login and password.
+8. User successfully sign-in when provided login and password matches with decoded data from <strong>user token</strong>.
+
+# Restore password and decode data
+
+Vault never save your decrypted password. Still no way to restore it and decode ecrypted data without password.
