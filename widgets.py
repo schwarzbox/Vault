@@ -49,7 +49,7 @@ class CellGrid(GridView):
             fraction=1,
             min_size=8,
             max_size=24,
-            repeat=4
+            repeat=2
         )
         self.grid.add_row(
             'row',
@@ -251,18 +251,18 @@ class LoadTree(TreeControl):
         return label
 
 
-class InputText(InputTextMixin):
-    def __init__(self, title: str, content: str):
+class InputText(InputTextMixin, Widget):
+    def __init__(self, title: str, label: str):
         super().__init__()
         self.title = title
-        self.content = content
+        self.label = label
         self.visible = False
 
     def on_key(self, event: events.Key) -> None:
-        if self.mouse_over:
+        if self.mouse_over and self.clicked:
             if str(event.key) == 'ctrl+v':
-                self.content = ''
-                self.content += pc.paste()
+                self.label = ''
+                self.label += pc.paste()
                 self.refresh()
 
     def hide(self):

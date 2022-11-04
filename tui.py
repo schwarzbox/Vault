@@ -196,9 +196,9 @@ class ViewApp(App):
         self.edit_value.visible = not self.edit_value.visible
         self.edit_button.visible = not self.edit_button.visible
 
-        self.edit_group.content = group
-        self.edit_key.content = key
-        self.edit_value.content = value
+        self.edit_group.label = group
+        self.edit_key.label = key
+        self.edit_value.label = value
 
     def _process_edit_data(self, edit_action):
         self.edit_cancel.hide()
@@ -226,22 +226,23 @@ class ViewApp(App):
 
     def _add_data(self):
         self.vlt.add_data(
-            self.edit_group.content,
-            self.edit_key.content,
-            self.edit_value.content
+            self.edit_group.label,
+            self.edit_key.label,
+            self.edit_value.label
         )
 
     def _update_data(self, group, key):
         self.vlt.update_data(
             group,
-            self.edit_group.content,
+            self.edit_group.label,
             key,
-            self.edit_key.content,
-            self.edit_value.content
+            self.edit_key.label,
+            self.edit_value.label
         )
 
     def _clear_data(self, group, key):
         self.vlt.clear_data(group, key)
+        self._show_notification_load_json()
 
     def _add_view(self, group='', key='', value=''):
         self._process_edit_view('Group', 'Key', 'Value')
@@ -307,11 +308,10 @@ class ViewApp(App):
         )
         old_key = self.vlt.key
         old_source = self.vlt.vault_db
-        source = self.source_update.content
+        source = self.source_update.label
 
-        self.source_update.content = ''
+        self.source_update.label = self.vlt.get_default_source()
         self.source_update.hide()
-        self.source_default.hide()
         try:
             self.vlt.set_source(source)
             self.vlt.get_user(login, password)
@@ -366,19 +366,12 @@ class ViewApp(App):
 
         self._set_source_mode()
 
-    def _set_default_source(self):
-        self.source_update.content = self.vlt.get_default_source()
-        # prevent hide
-        self.source_default.visible = True
-
     def action_set_source(self):
-        self.source_update.content = ''
+        self.source_update.label = self.vlt.get_default_source()
         self.source_update.visible = not self.source_update.visible
-        self.source_default.visible = not self.source_default.visible
         self.source_button.visible = not self.source_button.visible
 
         self._hide_pop_up_view(
-            self.source_default,
             self.source_update,
             self.source_button
         )
@@ -421,7 +414,9 @@ class ViewApp(App):
             try:
                 self.action_load_data()
                 self.vlt.load_data(path)
-                self.cells_grid.update_cells(cells=self._create_cells())
+                self.cells_grid.update_cells(
+                    cells=self._create_cells()
+                )
                 self._show_notification_load_json()
             except (
                 err.ActionNotAllowedForRemote,
@@ -501,14 +496,8 @@ class ViewApp(App):
         self.load_json.hscroll = LoadScroll(vertical=False)
         self.load_json.visible = False
 
-        self.source_default = ActionButton(
-            title=DEFAULT_LABEL,
-            label=self.vlt.get_default_source(),
-            action=self._set_default_source,
-            sec=FAST_ACTION_TIME
-        )
         self.source_update = InputText(
-            title=PASTE_LABEL, content=''
+            title=PASTE_LABEL, label=self.vlt.get_default_source(),
         )
         self.source_button = ActionButton(
             title=SOURCE,
@@ -524,13 +513,13 @@ class ViewApp(App):
         )
 
         self.edit_group = InputText(
-            title=PASTE_LABEL, content=''
+            title=PASTE_LABEL, label=''
         )
         self.edit_key = InputText(
-            title=PASTE_LABEL, content=''
+            title=PASTE_LABEL, label=''
         )
         self.edit_value = InputText(
-            title=PASTE_LABEL, content=''
+            title=PASTE_LABEL, label=''
         )
         self.edit_button = ActionButton(
             title=EDIT, label=OK_LABEL
@@ -551,7 +540,6 @@ class ViewApp(App):
         await self.view.dock(self.dump_json, z=2)
         await self.view.dock(self.load_json, z=2)
         await self.view.dock(
-            self.source_default,
             self.source_update,
             self.source_button,
             z=2
@@ -576,7 +564,6 @@ class ViewApp(App):
             self.whoami,
             self.dump_json,
             self.load_json,
-            self.source_default,
             self.source_update,
             self.source_button,
             self.edit_cancel,

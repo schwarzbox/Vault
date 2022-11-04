@@ -8,7 +8,6 @@ from rich.style import Style
 from rich.text import Text
 
 from textual.reactive import Reactive
-from textual.widget import Widget
 
 from settings import GREEN, YELLOW
 
@@ -23,8 +22,8 @@ class ButtonMixin:
             Text(
                 self.on_click_label if self.clicked else self.label,
             ),
-            vertical='middle',
-            style=YELLOW if self.mouse_over else GREEN
+            style=YELLOW if self.mouse_over else GREEN,
+            vertical='middle'
         )
         return Panel(
             renderable,
@@ -48,34 +47,27 @@ class ButtonMixin:
         self.clicked = False
 
 
-class InputTextMixin(Widget):
-    content: Reactive[RenderableType] = Reactive('')
+class InputTextMixin(ButtonMixin):
+    label: Reactive[RenderableType] = Reactive('')
+    clicked: Reactive[RenderableType] = Reactive(False)
     mouse_over: Reactive[RenderableType] = Reactive(False)
     height = None
 
-    def on_enter(self) -> None:
-        self.mouse_over = True
-
-    def on_leave(self) -> None:
-        self.mouse_over = False
-
     def render(self) -> RenderableType:
-        if self.mouse_over:
-            color = YELLOW
-        else:
-            color = GREEN
 
         renderable = Align.center(
-            Text(self.content),
-            style=GREEN,
-            vertical='middle',
+            Text(self.label),
+            style=YELLOW if self.clicked else GREEN,
+            vertical='middle'
         )
 
         return Panel(
             renderable,
-            title=self.title,
+            title=self.title if self.clicked else '',
             title_align='left',
             height=self.height,
-            border_style=color,
+            border_style=Style(
+                color=YELLOW if self.mouse_over else GREEN
+            ),
             box=HEAVY
         )

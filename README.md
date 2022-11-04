@@ -1,4 +1,4 @@
-# vault
+# Vault
 
 v1.3
 
@@ -238,6 +238,6 @@ Vault use SHA256 algorithm. Database is a simple JSON file.
 7. App tries to decode each <strong>user token</strong> in database and compare with provided login and password.
 8. User successfully sign-in when provided login and password matches with decoded data from <strong>user token</strong>.
 
-# Restore password and decode data
+## Restore password and decode data
 
 Vault never save your decrypted password. Still no way to restore it and decode ecrypted data without password.
