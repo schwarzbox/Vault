@@ -1,7 +1,7 @@
 # vault.py
 
 # about
-AUTHOR = 'Alexander Veledzimovich'
+AUTHOR = 'Aliaksandr Veledzimovich'
 EMAIL = 'veledz@gmail.com'
 DESCRIPTION = 'Command line password manager'
 LICENSE = 'MIT'

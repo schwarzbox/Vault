@@ -8,6 +8,9 @@ from settings import (
 with open('README.md', 'r') as f:
     long_description = f.read()
 
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
 setup(
     name=VAULT_TITLE,
     version=VERSION,
@@ -24,10 +27,7 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
-    install_requires=[
-        'textual',
-        'art', 'appdirs', 'cryptography', 'pyperclip', 'requests',
-    ],
+    install_requires=required,
     python_requires='>=3.9',
     entry_points={
         'console_scripts': ['vault=vault:main'],

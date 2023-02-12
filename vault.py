@@ -8,7 +8,7 @@ VAULT
 # vault.py
 
 # MIT License
-# Copyright (c) 2022 Alexander Veledzimovich veledz@gmail.com
+# Copyright (c) 2022 Aliaksandr Veledzimovich veledz@gmail.com
 
 # shiv -c vault -o vault --preamble preamble.py -r requirements.txt .
 # shiv -c vault -o vault --preamble preamble.py .
@@ -525,7 +525,7 @@ def main():
             err.GroupNotExists,
             err.GroupAlreadyExists,
             err.KeyNotExists,
-            err.KeyAlreadyExists
+            err.KeyAlreadyExists,
         ) as e:
             try:
                 err.show_error(e)
