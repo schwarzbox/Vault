@@ -287,7 +287,8 @@ class ViewApp(App):
         )
 
         self.cells_grid.update_cells(
-            cells=final_cells, repeat_grid=(False, True)
+            # set repeat this way to allow edit all cells
+            cells=final_cells, repeat_grid=(True, True)
         )
 
     def action_edit_data(self):
