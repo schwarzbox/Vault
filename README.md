@@ -1,243 +1,278 @@
 # Vault
 
-v1.3
+## v1.4
 
-Command line password manager.
+Local command line password manager with an optional TUI and support for encrypted remote database sources.
 
 ![Screenshot](screenshot/screenshot1.png)
 
-# Install
+### Usage
 
-You need python 3.9 to create executable and run <strong>vault</strong> password manager.
+Install [Python 3.12](https://www.python.org/downloads/release/python-3120/).
 
-## Manual installation
+#### Manual installation
 
 ```bash
 curl -L https://github.com/schwarzbox/Vault/archive/master.zip --output Vault.zip
-unzip Vault.zip
-rm Vault.zip
-
+unzip Vault.zip && rm Vault.zip
 cd Vault-master
-# create virtual environment to install shiv
 python3 -m venv venv-shiv
 . venv-shiv/bin/activate
 pip3 install shiv
-# create vault executable in the current dir
 shiv -c vault -o vault --preamble preamble.py .
 deactivate
-# remove venv-shiv
 rm -rf venv-shiv
 ```
 
-You can move <strong>vault</strong> to /usr/local/bin for Mac and Linux OS.
+Move `vault` to `/usr/local/bin`.
 
 ``` bash
-mv vault /usr/local/bin
+sudo mv vault /usr/local/bin
 ```
 
-## Use install.sh (bash only)
+#### Use install.sh
+
+The installation script requires Bash.
 
 ``` bash
 curl -L 'https://github.com/schwarzbox/Vault/archive/master.zip' --output Vault.zip
 unzip Vault.zip
 cd Vault-master
-
-chmod 744 install.sh
-# run in the same process
+chmod +x install.sh
 source ./install.sh
 ```
 
-# First run
+Verify the installation.
 
 ```bash
+# show help
 vault -h
+# show version
+vault --version
+# show info
+vault --info
 ```
 
 ![Screenshot](screenshot/screenshot2.png)
 
-## Info
+#### Minimal Example
+
+Sign up with a login and password.
 
 ```bash
-vault --info
+vault av@example.com -up
 ```
 
-## Version
+Sign in with the login.
 
 ```bash
-vault --version
+vault av@example.com -in
 ```
 
-# Create vault
+The `-in` flag can be omitted.
 
 ```bash
-# enter login and run sign-up process
-vault av@myemail.com -up
-# sign-in with login
-vault av@myemail.com -in
-# you can omit flag -in
-vault av@myemail.com
+vault av@example.com
 ```
 
-Note: User can use same login with new password to create different vault.
+The same login can be used with a different password to create a different vault.
 
-# Prepare JSON with your sensetive data. Try to use emojis in titles.
+#### Populate Vault
 
-Use example below or use sample.json to test password manager.
+Prepare JSON with your sensitive data. You can use emojis in titles.
 
+Use the example below or `sample.json` to test the password manager.
+
+`sample.json`
 ```JSON
 {
     "💌 email": {
-        "login": "av@myemail.com",
+        "login": "av@example.com",
         "password": "1234"
     },
     "☁️ aws": {
-        "login": "av@myemail.com",
+        "login": "av@example.com",
         "password": "5678"
     },
     "🧰 database": {
         "django-local": "DATABASE_NAME=MYDB\nDATABASE_USER=postgres\nDATABASE_PASSWORD=''\nDATABASE_HOST=127.0.0.1\nDATABASE_PORT=5432\nDATABASE_CONN_MAX_AGE=600"
     },
-    "🏠 personal": {
-        "WIFI-HOME": "wifi-av"
+    "personal": {
+        "WIFI-HOME": "home"
     }
 }
 ```
 
-Load sample.json using command line or use TUI after sign-in.
+Load `sample.json` using the command line or the TUI after signing in.
 
 ```bash
-vault av@myemail.com --load sample.json
+vault av@example.com --load sample.json
 ```
 
-# Dump decrypted data from the source vault to JSON
+Dump decrypted data from the source vault to JSON.
+
+`--dump` writes decrypted vault data to a JSON file. Keep the file secure and remove it when it is no longer needed.
 
 ```bash
-vault av@myemail.com --dump
+vault av@example.com --dump
 ```
 
-# Remove vault from the local database
+Remove the vault from the local database.
 
 ```bash
-vault av@myemail.com -rm
+vault av@example.com -rm
 ```
 
-# Find local database dir
-
-Iternally <strong>Vault</strong> use python package <strong>appdirs</strong> to determine where to save local encrypted database. For MacOS it is "~/Library/Application Support/VaultDB".
+Find the local database directory.
 
 ```bash
 vault --find
 ```
 
-# Remote access
+Internally, Vault uses the Python package `appdirs` to determine where to save the local encrypted database. On macOS, the default location is: `~/Library/Application Support/VaultDB`
 
-<strong>Vault</strong> creates default database and --source flag set to None. You can provide remote or local source for current session.
+#### Remote Access
 
-Upload encrypted database in GitHub or anywere else.
+Vault uses a local database by default. The `--source` option can be used to provide a different local or remote database for the current session.
 
-Load database in github repo. It is safe if you upload encrypted data.
+Remote sources are read-only. Vault does not modify remote databases.
 
-```bash
-vault av@myemail.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data'
-```
+The source database can be stored locally or at an HTTP(S) URL.
 
-Load vault database in private github repo. You need to provide token. But this token expired and you need to generate new link.
+Upload the encrypted database to GitHub or another remote location.
 
-```bash
-vault av@myemail.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data?token=TOKEN'
-```
-
-You can create secret gist and load encrypted database.
+Load it using the `--source` option.
 
 ```bash
-vault av@myemail.com --source 'https://gist.githubusercontent.com/MYGIT/1234/raw/1234/vault_data'
+vault av@example.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data'
 ```
 
-You can switch to remote source at runtime using TUI.
+For a private GitHub repository, provide a token with the source URL.
+
+```bash
+vault av@example.com --source 'https://raw.githubusercontent.com/MYGIT/MYREPO/main/vault_data?token=TOKEN'
+```
+
+Store the encrypted database in an unlisted gist.
+
+```bash
+vault av@example.com --source 'https://gist.githubusercontent.com/MYGIT/1234/raw/1234/vault_data'
+```
+
+The database contains encrypted data. The correct login and password are still required to decrypt the vault.
+
+Switch to a remote source at runtime using the TUI.
 
 ![Screenshot](screenshot/screenshot3.png)
 
-# Use TUI to manage vault.
+#### TUI
+
+Use the TUI to manage the vault.
 
 ![Screenshot](screenshot/screenshot4.png)
 
-Add, update and clear data in the local vault
+Add, update, and clear data in the local vault.
 
 ![Screenshot](screenshot/screenshot5.png)
 
-# Use CL to manage vault.
+#### CLI
 
-## Get data from the source vault
-
-```bash
-vault av@myemail.com -g aws login
-```
+Get data from the source vault.
 
 ```bash
-vault av@myemail.com -g aws login | wc -c
+vault av@example.com -g personal WIFI-HOME
 ```
 
-## List all groups and keys
+Pipe the result to another command.
 
 ```bash
-vault av@myemail.com -l
+vault av@example.com -g personal WIFI-HOME | wc -c
 ```
 
-## Add data to the local vault
+List all groups and keys.
 
 ```bash
-vault av@myemail.com -a aws login av@myemail.com
+vault av@example.com -l
 ```
 
-## Update data in the local vault (default value for second argument is "vault")
+Add data to the local vault.
 
 ```bash
-vault av@myemail.com -u aws
+vault av@example.com -a personal WIFI-WORK work
 ```
 
-You can update group name only
+Update a group name in the local vault.
 
 ```bash
-vault av@myemail.com -u group myaws
+vault av@example.com -u personal
 ```
 
-You can update key name only
+The default value for the second argument is `Vault`.
 
 ```bash
-vault av@myemail.com -u myaws myaws login username
+vault av@example.com -u Vault private
 ```
 
-You should use 5 arguments to update value
+Update a key name only.
 
 ```bash
-vault av@myemail.com -u myaws myaws username username alex@myemail.com
+vault av@example.com -u private private WIFI-WORK WIFI-OFFICE
 ```
 
-## Clear data in the local vault
+Update a value using five arguments.
 
 ```bash
-vault av@myemail.com -c myaws username
+vault av@example.com -u private private WIFI-OFFICE WIFI-OFFICE office
 ```
 
-## Erase all data in the local vault
+Clear data from the local vault.
 
 ```bash
-vault av@myemail.com -e
+vault av@example.com -c private WIFI-OFFICE
 ```
 
-# Encryption
+Erase all data from the local vault.
 
-Vault use SHA256 algorithm. Database is a simple JSON file.
+```bash
+vault av@example.com -e
+```
 
-1. When user sign-up app creates <strong>safe key</strong> using login and password.
-2. App combine login and password in one <strong>credential string</strong>.
-3. App uses <strong>safe key</strong> to encode <strong>credential string</strong> and get <strong>user token</strong>.
-4. <strong>User token</strong> uses as unique key for the user vault.
-5. All data in the user vault encrypted using <strong>safe key</strong>.
-6. When user sign-in app creates new safe key from provided login and password.
-7. App tries to decode each <strong>user token</strong> in database and compare with provided login and password.
-8. User successfully sign-in when provided login and password matches with decoded data from <strong>user token</strong>.
+### Encryption
 
-## Restore password and decode data
+Vault uses Fernet for authenticated symmetric encryption and Argon2id for key derivation.
 
-Vault never save your decrypted password. Still no way to restore it and decode ecrypted data without password.
+The database is a JSON file containing encrypted vault identifiers and encrypted vault data.
+
+The encryption process works as follows:
+
+1. Vault normalizes the login using Unicode NFC normalization.
+2. The normalized login is UTF-8 encoded and used as a deterministic salt for Argon2id.
+3. Argon2id derives a 32-byte key from the password and login-derived salt.
+4. The derived key is encoded using URL-safe Base64 and used as a Fernet key.
+5. During sign-up, Vault encrypts the vault identifier using the derived Fernet key.
+6. Vault encrypts every group name, key, and value before storing them in the database.
+7. During sign-in, Vault derives the same key from the provided login and password.
+8. Vault attempts to decrypt the vault identifiers stored in the database.
+9. Sign-in succeeds when the appropriate vault identifier can be successfully decrypted.
+
+The current key derivation uses:
+
+```text
+algorithm:    Argon2id
+memory cost:  16384 KiB (16 MiB)
+time cost:    3
+parallelism:  4
+key length:   32 bytes
+salt:         normalized login encoded as UTF-8
+```
+
+### Restore Password
+
+Vault never stores plaintext password.
+
+There is no password-recovery mechanism. Vault cannot recover password or decrypt the encrypted vault data without the correct password.
+
+### Credits
+
+Design/Art/Code: [Aliaksandr Veledzimovich](https://twitter.com/veledzimovich)<br>
+Engine: [Textual](https://github.com/Textualize/textual) [License](https://github.com/Textualize/textual?tab=MIT-1-ov-file)<br>
