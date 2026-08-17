@@ -23,7 +23,7 @@ python3 -m venv venv-shiv
 . venv-shiv/bin/activate
 pip3 install shiv
 # create vault executable in the current dir
-shiv -c vault -o vault --preamble preamble.py . --use-feature=2020-resolver
+shiv -c vault -o vault --preamble preamble.py .
 deactivate
 # remove venv-shiv
 rm -rf venv-shiv
